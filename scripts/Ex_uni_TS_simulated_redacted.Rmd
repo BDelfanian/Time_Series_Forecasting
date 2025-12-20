@@ -1,0 +1,342 @@
+---
+title: "Univariate TS - simulated data"
+output: html_notebook
+---
+
+The objective is to become familiar with univariate time series (TS) models and tests within a controlled environment, utilizing simulated data. By controlling the environment, including knowledge of the true data-generating process, we can circumvent practical issues like outliers, discontinuities, and uninformative data. Instead, our focus is on analyzing the characteristics of TS models and developing a better understanding.       
+
+## Packages
+We will be using stats, ggplot2, ggpubr, gridExtra and forecast package (see also tseries package!). 
+
+## Exercise 1: Simulate AR(1) Data
+
+Simulate data from an AR(1) model. Do not use built-in functions. Program it from scratch. Next, in one figure, plot the series,  the autocorrelation (ACF) and the partial autocorrelation (PACF) functions (for lags 1 to 10). Next, vary the value of the autoregressive parameter ($\phi_1$) from the set {0, 0.5, 0.9, 1.0}. 
+
+1. How does the pattern of the series change when $\phi_1$ ↑?
+2. What happens to the ACF and PACF?
+3. Can you determine, by inspecting the ACF and PACF, which time series model (AR, MA, ARMA) is appropriate for the simulated series?
+
+
+```{r echo=TRUE}
+# Load necessary packages
+library(stats)        # package for statistics
+library(ggplot2)      # package for plotting
+library(ggpubr)       # for multiple figures in one
+library(forecast)     # used for forecasting and some plots (ggAcf)
+
+# Set seed
+set.seed(1)
+
+# Set burn-in observations (to wash out the effect of initial values) and the number of observations
+nburn <- 100
+nobs  <- 1000
+
+# Set AR coefficient value
+phi1 <- 0.5
+truevar <- [??]
+
+# Empty placeholder for the AR series
+y <- numeric(nburn + nobs)
+
+# Draw white-noise errors (N ~ (0, 1))
+e <- rnorm(nburn + nobs)
+
+# Simulate AR(1) process
+for (i in 2:(nburn + nobs)) {
+  y[i] <- [??]
+}
+
+# Drop burn-in observations 
+y <- y[(nburn + 1):(nburn + nobs)]
+
+# Change to time series data
+y <- ts(y, start=1)
+
+
+# # Plot series, ACF, and PACF
+# # Open new window where plots will be shown
+# dev.new()
+# par(mfrow=c(1, 3))
+# plot(y, type="l", main=sprintf("AR(1), phi1=%f", phi1))
+# abline(h=0, col="red")
+# acf(y, lag.max=10, main="ACF")
+# pacf(y, lag.max=10, main="PACF")
+
+# Create plot objects
+plot_y  <- ggplot(data.frame(x = 1:nobs, y = as.numeric(y)), aes(x = x, y = y)) + 
+  geom_line() + 
+  labs(title = "AR(1)")+
+  geom_hline(yintercept=0, color="red")
+plot_ac  <- ggAcf(y,lag.max = 10) + labs(title="ACF")
+plot_pac <- ggPacf(y, lag.max = 10) + labs(title="PACF")
+
+# Display plot
+ggarrange(plot_y,plot_ac,plot_pac,ncol = 3)
+
+```
+
+```{r}
+# Display true and estimated mean and variance
+cat("True mean is 0\n")
+cat(sprintf("Sample mean is %f\n", mean(y)))
+cat(sprintf("True variance is sig^2/(1-phi_1^2) = %f\n", truevar))
+cat(sprintf("Sample variance is %f\n", var(y)))
+```
+
+
+## Exercise 2: Simulate MA(1) Data
+
+Simulate data from an MA(1) model with $\theta_1$ values from the set {0, 0.5, 0.9, 1.0}. First, programe it from scratch. Next, utilize the stats package function for simulating data from ARIMA models.
+
+```{r echo=TRUE}
+# FROM SCRATCH
+
+# Set seed
+set.seed(1)
+
+# Set burn-in observations (to wash out the effect of initial values) and the number of observations
+nburn <- 100
+nobs  <- 1000
+
+# Set AR coefficient value
+theta1 <- 0.5
+
+# Empty placeholder for the AR series
+y <- numeric(nburn + nobs)
+
+# Draw white-noise errors (N ~ (0, 1))
+e <- rnorm(nburn + nobs)
+
+# Simulate AR(1) process
+for (i in 2:(nburn + nobs)) {
+  y[i] <- [??]
+}
+
+# Drop burn-in observations 
+y <- y[(nburn + 1):(nburn + nobs)]
+
+# Change to time series data
+y <- ts(y, start=1)
+
+# Create plot objects
+plot_y  <- ggplot(data.frame(x = 1:nobs, y = as.numeric(y)), aes(x = x, y = y)) + 
+  geom_line() + 
+  labs(title = "MA(1)")+
+  geom_hline(yintercept=0, color="red")
+plot_ac  <- ggAcf(y,lag.max = 10) + labs(title="ACF")
+plot_pac <- ggPacf(y, lag.max = 10) + labs(title="PACF")
+
+# Display plot
+ggarrange(plot_y,plot_ac,plot_pac,ncol = 3)
+
+```
+
+
+```{r}
+# BUILT-IN FUNCTIONS
+
+# set the number of observations
+nobs <- 1000
+
+# set MA parameter
+theta1 <- c(0.5)
+
+# simulate y_t
+y <- arima.sim(list(order = c(0,0,1), ma = theta1), n = nobs, n.start = 100)
+
+# Create plot objects
+plot_y  <- ggplot(data.frame(x = 1:nobs, y = as.numeric(y)), aes(x = x, y = y)) + 
+  geom_line() + 
+  labs(title = "MA(1)")+
+  geom_hline(yintercept=0, color="red")
+plot_ac  <- ggAcf(y,lag.max = 10) + labs(title="ACF")
+plot_pac <- ggPacf(y, lag.max = 10) + labs(title="PACF")
+
+# Display plot
+ggarrange(plot_y,plot_ac,plot_pac,ncol = 3)
+
+```
+
+
+## Exercise 3: Simulate ARMA(2,0) Data and Perform Statistical Tests
+
+1. Simulate 200 data points from a stationary ARMA(2,0) model. Assume $\phi_1 = 0.6$ and $\phi_2 = 0.3$. Plot the data.
+2. Test the data for stationarity using the Augmented Dickey-Fuller and Kwiatkowski-Phillips-Schmidt-Shin tests.
+3. Inspect the autocorrelation (AC) and partial autocorrelation (PAC) functions. Select the number of autoregressive (AR) and moving average (MA) lags.
+4. Estimate the true model (ARMA(2,0)).
+5. Test the whiteness of the residuals using the Breusch-Pagan autocorrelation test.
+6. Estimate ARMA(1,0) and ARMA(3,0) models, and discuss the differences between them.
+7. Display information criteria for AR(1) to AR(3).
+
+```{r}
+# 3.1
+# Seed
+set.seed(1)
+# set the number of observations
+nobs <- 1000
+
+# set AR parameters
+phi <- c(0.5,0.2)
+
+# simulate y_t
+# ??arima.sim
+y <- [??]
+
+# plot
+ggplot(data.frame(x = 1:nobs, y = as.numeric(y)), aes(x = x,y = y)) + 
+         geom_line() + 
+         labs(title = "AR(2)")+
+         geom_hline(yintercept=0, color="red")
+         
+
+```
+
+```{r}
+# 3.2
+# ADF test
+library(urca)
+# help(package="urca")
+# What is the null hypothesis in the ADF test? H0: Series has a unit root! 
+
+# NONE -  model without drift or time trend 
+# MODEL: d_y_t = gamma*y_t-1 + e_t
+# TEST:  t-stat for gamma, but compare to "special" critical values
+# -      gamma or tau-statistic is the main focus 
+# if [tau1 < CV_tau1] then we cannot reject gamma = 0 
+y %>% ur.df(type ="none", lags = 5, selectlags = c("AIC")) %>% summary
+```
+
+```{r}
+# 3.2
+# ADF test
+# DRIFT - model with drift
+# MODEL: d_y_t = c + gamma*y_t-1 + e_t
+# TEST:  gamma = 0, if true we have a unit root
+# gamma or tau-statistic is the main focus 
+# if [tau2 < CV_tau2] then we cannot reject gamma = 0
+# if [phi1 < CV_phi1] then we cannot reject gamma = 0 AND (NOT OR) c = 0 
+y %>% ur.df(type ="drift", lags = 5, selectlags = c("AIC")) %>% summary
+```
+```{r}
+# 3.2
+# ADF test
+# TREND - model with trend
+# MODEL: d_y_t = c + gamma*y_t-1 + a*t + e_t
+# TEST:  gamma = 0, if true we have a unit root
+# gamma or tau-statistic is the main focus 
+# if [tau3 < CV_tau3] then we cannot reject gamma = 0
+# if [phi2 < CV_phi2] then we cannot reject gamma = 0 AND (NOT OR) a = 0 
+# if [phi3 < CV_phi3] then we cannot reject gamma = 0 AND a = 0 AND c = 0
+y %>% ur.df(type ="trend", lags = 5, selectlags = c("AIC")) %>% summary
+```
+```{r}
+# 3.2
+# KPSS test
+# What is the null hypothesis in the KPSS test? 
+# Type: mu - difference stationary, tau - trend stationary
+y %>% ur.kpss(type ="mu", lags = "short") %>% summary
+```
+
+
+```{r}
+# 3.1 & 3.2
+# Increase the persistence of the AR(2) model to phi1=.85, phi2=.1, so that phi_1 + phi_2 is < 1 but close to 1 (model is still stationary!). Simulate data and redo the tests. Set sample size to 100. Do the tests still give you the correct answer regarding stationarity?
+# HELP:
+# phi <- c(0.85,0.1)
+# y <- arima.sim(list(order = c(2,0,0), ar = phi), n = nobs, n.start = 100)
+```
+
+
+
+```{r}
+# Set back the original model: phi <- c(0.5,0.2), nobs <- 1000
+ 
+# 3.3 Inspect AC and PAC functions,  select the model, AR&MA lags.
+plot_ac  <- ggAcf(y,lag.max = 10) + labs(title="ACF")
+plot_pac <- ggPacf(y, lag.max = 10) + labs(title="PACF")
+# Display plot
+ggarrange(plot_ac,plot_pac,ncol = 2)
+
+# y %>% ggtsdisplay()
+```
+
+
+```{r}
+# 3.4 Estimate the TRUE model. 
+mdlEst <- Arima(y, order=c(2,0,0)) 
+
+# interpret output
+summary(mdlEst)
+# https://stat.ethz.ch/R-manual/R-patched/library/stats/html/arima.html
+```
+```{r}
+# perform statistical tests on the coefficients - interpret statistical significance
+p_values = (1-pnorm(abs(mdlEst$coef)/sqrt(diag(mdlEst$var.coef))))*2 
+p_values = round(p_values,2)
+sprintf("P-values for the coefficients are: ")
+p_values
+```
+
+
+```{r}
+# 3.4 Test for whitness of the residuals by using an autocorrelation test.   
+# interpret residual autocorrelation test
+# what are the consequences of failing this test? 
+checkresiduals(mdlEst,plot = TRUE, test = "LB")
+
+# interpret Jarque-Bera test
+# what are the consequences of failing this test? 
+library(tseries)        # another package for modelling time series
+jarque.bera.test(mdlEst$residuals)
+```
+
+
+```{r}
+# 3.6 Estimate ARMA(3,0) although the true model is ARMA(2,0)
+# the case of redundant regressor  
+# discuss the consequences
+mdlEst <- Arima(y, order=c(3,0,0)) 
+summary(mdlEst)
+p_values = (1-pnorm(abs(mdlEst$coef)/sqrt(diag(mdlEst$var.coef))))*2 
+p_values = round(p_values,2)
+sprintf("P-values for the coefficients are: ")
+p_values
+checkresiduals(mdlEst,plot = TRUE, test = "LB")
+```
+
+```{r}
+# 3.6 Estimate ARMA(1,0) although the true model is ARMA(2,0)
+# the case of missing an important regressor 
+# discuss the consequences
+mdlEst <- Arima(y, order=c(1,0,0)) 
+summary(mdlEst)
+p_values = (1-pnorm(abs(mdlEst$coef)/sqrt(diag(mdlEst$var.coef))))*2 
+p_values = round(p_values,2)
+sprintf("P-values for the coefficients are: ")
+p_values
+checkresiduals(mdlEst,plot = TRUE, test = "LB")
+```
+
+
+```{r}
+# 3.7 Select the model by using information criteria
+p_max = 5
+AIC  = vector(length=p_max, mode="numeric")
+AAIC = vector(length=p_max, mode="numeric")
+BIC  = vector(length=p_max, mode="numeric")
+for (p in 0:p_max) {
+  # estimate the model
+  mdlEst <- Arima(y, order=c(p,0,0))
+  # store information criteria
+  AIC[p+1]  <- mdlEst$aic
+  AAIC[p+1] <- ifelse(!is.null(mdlEst$aaic), mdlEst$aaic, NA) 
+  BIC[p+1]  <- mdlEst$bic
+} 
+# AIC <- lapply(seq(0,p_max,1), \(p) {Arima(y, order=c(p,0,0))$aic})
+# AIC <- sapply(seq(0,p_max,1), \(p) {Arima(y, order=c(p,0,0))$aic})
+# rm(list = c("AIC", "AAIC", "BIC"))
+p_aic <- which.min(AIC) - 1 
+p_bic <- which.min(BIC) - 1 
+sprintf("Optimal lag according to AIC is %d",p_aic)
+sprintf("Optimal lag according to BIC is %d",p_bic)
+```

@@ -1,0 +1,2634 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.23">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Mohsen Asgari">
+<meta name="dcterms.date" content="2025-12-05">
+
+<title>Time Series Analysis</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="TS_analysis_files/libs/clipboard/clipboard.min.js"></script>
+<script src="TS_analysis_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="TS_analysis_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="TS_analysis_files/libs/quarto-html/popper.min.js"></script>
+<script src="TS_analysis_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="TS_analysis_files/libs/quarto-html/anchor.min.js"></script>
+<link href="TS_analysis_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="TS_analysis_files/libs/quarto-html/quarto-syntax-highlighting-226bd0f977fa82dfae4534cac220d79a.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="TS_analysis_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="TS_analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="TS_analysis_files/libs/bootstrap/bootstrap-c55efa1fd218a545ebab9e5bcab7af02.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of Contents</h2>
+   
+  <ul>
+  <li><a href="#exercise-1" id="toc-exercise-1" class="nav-link active" data-scroll-target="#exercise-1"><span class="header-section-number">1</span> Exercise 1</a>
+  <ul class="collapse">
+  <li><a href="#answers-for-exercise-1" id="toc-answers-for-exercise-1" class="nav-link" data-scroll-target="#answers-for-exercise-1"><span class="header-section-number">1.1</span> Answers for exercise 1</a></li>
+  </ul></li>
+  <li><a href="#exercise-2" id="toc-exercise-2" class="nav-link" data-scroll-target="#exercise-2"><span class="header-section-number">2</span> Exercise 2</a>
+  <ul class="collapse">
+  <li><a href="#answers-for-exercise-2" id="toc-answers-for-exercise-2" class="nav-link" data-scroll-target="#answers-for-exercise-2"><span class="header-section-number">2.1</span> Answers for exercise 2</a></li>
+  </ul></li>
+  <li><a href="#exercise-3" id="toc-exercise-3" class="nav-link" data-scroll-target="#exercise-3"><span class="header-section-number">3</span> Exercise 3</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="TS_analysis.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">Time Series Analysis</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Mohsen Asgari </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">December 5, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xts)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tseries)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xts)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(zoo)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forecast)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="exercise-1" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Exercise 1</h1>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Fund<span class="ot">=</span><span class="fu">read.csv</span>(<span class="st">"8 Funds.csv"</span>,<span class="at">header=</span><span class="cn">TRUE</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Fund,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>       Date LP60083956 LP60071398 LP60088034 LP60081330 LP60094177 LP60058385
+1  1/4/2005      46.60     102.58      10.96      25.03      10.85       5.47
+2  1/5/2005      46.60     102.01      10.93      24.98      10.80       5.52
+3  1/6/2005      46.60     101.55      10.97      25.01      10.82       5.51
+4  1/7/2005      46.60     101.63      11.07      25.08      10.88       5.54
+5 1/10/2005      46.72     101.72      11.09      25.23      10.91       5.55
+  LP60071418 LP60070661
+1      93.48       8.43
+2      90.09       8.38
+3      90.62       8.40
+4      90.19       8.51
+5      91.45       8.52</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>time<span class="ot">=</span><span class="fu">as.Date</span>(Fund<span class="sc">$</span>Date,<span class="at">format=</span><span class="st">"%m/%d/%Y"</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(time,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "2005-01-04" "2005-01-05" "2005-01-06" "2005-01-07" "2005-01-10"</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>Fundnew<span class="ot">=</span>Fund[,<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Fundnew,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>  LP60083956 LP60071398 LP60088034 LP60081330 LP60094177 LP60058385 LP60071418
+1      46.60     102.58      10.96      25.03      10.85       5.47      93.48
+2      46.60     102.01      10.93      24.98      10.80       5.52      90.09
+3      46.60     101.55      10.97      25.01      10.82       5.51      90.62
+4      46.60     101.63      11.07      25.08      10.88       5.54      90.19
+5      46.72     101.72      11.09      25.23      10.91       5.55      91.45
+  LP60070661
+1       8.43
+2       8.38
+3       8.40
+4       8.51
+5       8.52</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>Fund.xts<span class="ot">=</span><span class="fu">xts</span>(Fundnew,<span class="at">order.by=</span>time)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Fund.xts,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>           LP60083956 LP60071398 LP60088034 LP60081330 LP60094177 LP60058385
+2005-01-04      46.60     102.58      10.96      25.03      10.85       5.47
+2005-01-05      46.60     102.01      10.93      24.98      10.80       5.52
+2005-01-06      46.60     101.55      10.97      25.01      10.82       5.51
+2005-01-07      46.60     101.63      11.07      25.08      10.88       5.54
+2005-01-10      46.72     101.72      11.09      25.23      10.91       5.55
+           LP60071418 LP60070661
+2005-01-04      93.48       8.43
+2005-01-05      90.09       8.38
+2005-01-06      90.62       8.40
+2005-01-07      90.19       8.51
+2005-01-10      91.45       8.52</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(Fund.xts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "LP60083956" "LP60071398" "LP60088034" "LP60081330" "LP60094177"
+[6] "LP60058385" "LP60071418" "LP60070661"</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>Fund2<span class="ot">=</span>Fund.xts[,<span class="dv">2</span>]</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Index              LP60071398    
+ Min.   :2005-01-04   Min.   : 93.52  
+ 1st Qu.:2008-04-03   1st Qu.:152.69  
+ Median :2011-07-04   Median :172.48  
+ Mean   :2011-07-03   Mean   :178.84  
+ 3rd Qu.:2014-10-01   3rd Qu.:201.23  
+ Max.   :2017-12-29   Max.   :299.00  </code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "xts" "zoo"</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 3389    1</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "LP60071398"</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>           LP60071398
+2005-01-04     102.58
+2005-01-05     102.01
+2005-01-06     101.55
+2005-01-07     101.63
+2005-01-10     101.72
+2005-01-11     101.46</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>           LP60071398
+2017-12-22     289.85
+2017-12-25     289.85
+2017-12-26     289.85
+2017-12-27     287.69
+2017-12-28     288.87
+2017-12-29     288.36</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">start</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "2005-01-04"</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">end</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "2017-12-29"</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 3389</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(Fund2,<span class="at">main=</span><span class="st">"Fund2"</span>,<span class="at">ylab=</span><span class="st">"Price"</span>,<span class="at">xlab=</span><span class="st">"Date"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(Fund2,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(Fund2,<span class="at">lag.max=</span><span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-1-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(Fund2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Augmented Dickey-Fuller Test
+
+data:  Fund2
+Dickey-Fuller = -1.8825, Lag order = 15, p-value = 0.6281
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>return<span class="ot">=</span><span class="fu">diff</span>(<span class="fu">log</span>(Fund2))</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>              LP60071398
+2005-01-04            NA
+2005-01-05 -0.0055721343
+2005-01-06 -0.0045195597
+2005-01-07  0.0007874791
+2005-01-10  0.0008851734</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>return<span class="ot">=</span><span class="fu">na.omit</span>(return)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>              LP60071398
+2005-01-05 -0.0055721343
+2005-01-06 -0.0045195597
+2005-01-07  0.0007874791
+2005-01-10  0.0008851734
+2005-01-11 -0.0025593084</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>))</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(return,<span class="at">main=</span><span class="st">"Returns of Fund2"</span>,<span class="at">ylab=</span><span class="st">"return"</span>,<span class="at">xlab=</span><span class="st">"Date"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-1-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(return)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Augmented Dickey-Fuller Test
+
+data:  return
+Dickey-Fuller = -14.741, Lag order = 15, p-value = 0.01
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(return,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(return,<span class="at">lag.max=</span><span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-1-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>model1<span class="ot">=</span><span class="fu">arima</span>(return,<span class="at">order=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>))</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>model1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+arima(x = return, order = c(0, 0, 1))
+
+Coefficients:
+         ma1  intercept
+      0.0406      3e-04
+s.e.  0.0172      2e-04
+
+sigma^2 estimated as 0.0001504:  log likelihood = 10103.5,  aic = -20200.99</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>model2<span class="ot">=</span><span class="fu">arima</span>(return,<span class="at">order=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>))</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>model2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+arima(x = return, order = c(1, 0, 0))
+
+Coefficients:
+         ar1  intercept
+      0.0401      3e-04
+s.e.  0.0172      2e-04
+
+sigma^2 estimated as 0.0001504:  log likelihood = 10103.45,  aic = -20200.91</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>model3<span class="ot">=</span><span class="fu">arima</span>(return,<span class="at">order=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">2</span>))</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>model3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+arima(x = return, order = c(0, 0, 2))
+
+Coefficients:
+         ma1      ma2  intercept
+      0.0400  -0.0052      3e-04
+s.e.  0.0173   0.0177      2e-04
+
+sigma^2 estimated as 0.0001504:  log likelihood = 10103.54,  aic = -20199.08</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>model4<span class="ot">=</span><span class="fu">arima</span>(return,<span class="at">order=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">2</span>))</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>model4</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+arima(x = return, order = c(1, 0, 2))
+
+Coefficients:
+         ar1      ma1      ma2  intercept
+      0.6809  -0.6442  -0.0539      3e-04
+s.e.  0.1467   0.1469   0.0166      2e-04
+
+sigma^2 estimated as 0.0001502:  log likelihood = 10106,  aic = -20202</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(model1,model2,model3,model4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>       df       AIC
+model1  3 -20200.99
+model2  3 -20200.91
+model3  4 -20199.08
+model4  5 -20202.00</code></pre>
+</div>
+</div>
+<section id="answers-for-exercise-1" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="answers-for-exercise-1"><span class="header-section-number">1.1</span> Answers for exercise 1</h2>
+<p>The original price series is not stationary, but the returns are:</p>
+<ul>
+<li><p>Price Series (Fund2):<br>
+The (ADF) test yielded a p-value of 0.6281 (&gt; 0.05). We cannot reject the null hypothesis of a unit root, it is non-stationary.</p></li>
+<li><p>Return Series (return):<br>
+After taking the log-difference, the ADF test yielded a p-value of 0.01 (&lt; 0.05). We reject the null hypothesis, it is stationary.</p></li>
+</ul>
+<p>Since differencing the data once produces a stationary series (the return), the original process is integrated of order 1 (random walk).</p>
+<p>The ARMA(1,2) model is the best because it has the lowest AIC (-20202.00).<br>
+The plots of ACF and PACF confirm stationarity and mostly stay within the significance bounds</p>
+</section>
+</section>
+<section id="exercise-2" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Exercise 2</h1>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>MSFT<span class="ot">=</span><span class="fu">read.csv</span>(<span class="st">"MSFT.csv"</span>,<span class="at">header=</span><span class="cn">TRUE</span>)</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFT,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Date Adj.Close
+1 1/1/2010  22.12004
+2 2/1/2010  22.50467
+3 3/1/2010  23.09885
+4 4/1/2010  24.08464
+5 5/1/2010  20.34655</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>time<span class="ot">=</span><span class="fu">as.Date</span>(MSFT<span class="sc">$</span>Date,<span class="at">format=</span><span class="st">"%m/%d/%Y"</span>)</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(time,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "2010-01-01" "2010-02-01" "2010-03-01" "2010-04-01" "2010-05-01"</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>MSFTnew<span class="ot">=</span>MSFT[,<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFTnew,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 22.12004 22.50467 23.09885 24.08464 20.34655</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>MSFT.xts<span class="ot">=</span><span class="fu">xts</span>(MSFTnew,time)</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFT.xts,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>               [,1]
+2010-01-01 22.12004
+2010-02-01 22.50467
+2010-03-01 23.09885
+2010-04-01 24.08464
+2010-05-01 20.34655</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>MSFT.ts<span class="ot">=</span><span class="fu">ts</span>(MSFT[,<span class="dv">2</span>],<span class="at">start=</span><span class="fu">c</span>(<span class="dv">2010</span>,<span class="dv">1</span>),<span class="at">end=</span><span class="fu">c</span>(<span class="dv">2019</span>,<span class="dv">12</span>),<span class="at">frequency=</span><span class="dv">12</span>)</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFT.ts,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Jan      Feb      Mar      Apr      May
+2010 22.12004 22.50467 23.09885 24.08464 20.34655</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>MSFT_MA<span class="ot">=</span><span class="fu">rollmean</span>(MSFT.ts,<span class="dv">10</span>)</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFT_MA,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>          May      Jun      Jul      Aug      Sep
+2010 21.01661 20.81634 20.80231 20.71444 20.43584</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(MSFT.ts,<span class="at">main=</span><span class="st">"Original vs MA"</span>,<span class="at">ylab=</span><span class="st">"Ad.C.P."</span>,<span class="at">xlab=</span><span class="st">"Time"</span>,<span class="at">col =</span><span class="st">"red"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(MSFT_MA,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topleft"</span>,<span class="at">legend=</span><span class="fu">c</span>(<span class="st">"Original"</span>,<span class="st">"MA"</span>),<span class="at">col=</span><span class="fu">c</span>(<span class="st">"red"</span>,<span class="st">"blue"</span>),<span class="at">lty=</span><span class="dv">1</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>dec<span class="ot">=</span><span class="fu">decompose</span>(MSFT.ts,<span class="at">type=</span><span class="st">"additive"</span>)</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>dec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>$x
+           Jan       Feb       Mar       Apr       May       Jun       Jul
+2010  22.12004  22.50467  23.09885  24.08464  20.34655  18.22817  20.44628
+2011  22.22015  21.29865  20.46536  20.89256  20.15906  21.09441  22.23026
+2012  24.29114  26.10907  26.71152  26.51280  24.16954  25.49495  24.56149
+2013  23.21874  23.51479  24.40029  28.22963  29.76477  29.66431  27.34545
+2014  32.97568  33.38527  35.98862  35.47060  35.94472  36.87027  38.16118
+2015  36.17065  39.25947  36.66249  43.85794  42.25294  40.06810  42.38234
+2016  50.66554  46.79367  51.15899  46.19408  49.09338  47.72978  52.86933
+2017  61.08928  60.45619  62.60993  65.08163  66.39352  65.90403  69.50853
+2018  91.78175  90.58389  88.58300  90.76675  95.93014  96.12175 103.40325
+2019 102.62807 110.09694 116.39996 128.89465 122.06501 132.70018 134.98845
+           Aug       Sep       Oct       Nov       Dec
+2010  18.59257  19.50409  21.24027  20.11733  22.36439
+2011  21.58120  20.32129  21.74191  20.88464  21.35449
+2012  25.68664  24.96750  23.94397  22.33317  22.59281
+2013  28.68523  28.78357  30.62580  32.97832  32.60095
+2014  40.16826  41.24656  41.77148  42.53664  41.58728
+2015  39.49634  40.43281  48.08818  49.65031  51.02423
+2016  53.59690  54.06235  56.23986  56.55898  58.71752
+2017  71.48766  71.59940  79.95219  80.90376  82.63354
+2018 109.49554 111.91309 104.51549 108.50786  99.81742
+2019 136.56349 138.18109 142.49458 150.45569 157.27043
+
+$seasonal
+              Jan          Feb          Mar          Apr          May
+2010 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+2011 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+2012 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+2013 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+2014 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+2015 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+2016 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+2017 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+2018 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+2019 -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+              Jun          Jul          Aug          Sep          Oct
+2010 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+2011 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+2012 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+2013 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+2014 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+2015 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+2016 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+2017 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+2018 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+2019 -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+              Nov          Dec
+2010  0.536440778 -0.662038384
+2011  0.536440778 -0.662038384
+2012  0.536440778 -0.662038384
+2013  0.536440778 -0.662038384
+2014  0.536440778 -0.662038384
+2015  0.536440778 -0.662038384
+2016  0.536440778 -0.662038384
+2017  0.536440778 -0.662038384
+2018  0.536440778 -0.662038384
+2019  0.536440778 -0.662038384
+
+$trend
+           Jan       Feb       Mar       Apr       May       Jun       Jul
+2010        NA        NA        NA        NA        NA        NA  21.05816
+2011  20.77393  20.97278  21.13136  21.18631  21.23919  21.22908  21.27329
+2012  23.54737  23.81556  24.18022  24.46556  24.61767  24.72962  24.73653
+2013  25.35584  25.59678  25.88073  26.31814  27.04010  27.90065  28.72419
+2014  33.08853  34.01765  35.01540  35.99909  36.86176  37.63445  38.14201
+2015  40.48780  40.63568  40.57378  40.80307  41.36267  42.05228  43.04944
+2016  47.32943  48.35391  49.50933  50.41688  51.04440  51.65281  52.40769
+2017  60.15826  61.59701  63.07317  64.79189  66.79427  68.80514  71.08049
+2018  85.56664  88.56259  91.82599  94.52919  96.70283  98.56900  99.73692
+2019 113.85251 116.29639 118.51872 121.19568 124.52597 128.66767        NA
+           Aug       Sep       Oct       Nov       Dec
+2010  21.01208  20.85210  20.60937  20.46855  20.58017
+2011  21.56001  22.02071  22.51514  22.91642  23.26688
+2012  24.58375  24.37936  24.35459  24.65926  25.06612
+2013  29.54200  30.43612  31.22068  31.77988  32.33763
+2014  38.51989  38.79272  39.17027  39.78259  40.17867
+2015  43.96732  44.88526  45.58662  45.96898  46.57323
+2016  53.41128  54.45768  55.72178  57.22960  58.70770
+2017  73.61467  75.95220  78.10462  80.40553  82.89529
+2018 101.00190 102.97398 105.72168 108.39930 111.01235
+2019        NA        NA        NA        NA        NA
+
+$random
+              Jan          Feb          Mar          Apr          May
+2010           NA           NA           NA           NA           NA
+2011   1.79647418   1.03512788  -0.13695327  -1.20063244  -0.80804880
+2012   1.09401893   3.00276992   3.06035431   1.14036135  -0.17605101
+2013  -1.78685145  -1.37273050  -0.95138377   1.00461518   2.99675562
+2014   0.23740026   0.07688680   1.50227756  -1.43536365  -0.64496188
+2015  -3.96690278  -0.66695229  -3.38223706   2.14799443   1.16235133
+2016   3.68635984  -0.85098429   2.17870969  -5.12968003  -1.67893888
+2017   1.28126472  -0.43156070   0.06581006  -0.61714028  -0.12867417
+2018   6.56535518   2.73056559  -2.71393698  -4.66931607  -0.50061788
+2019 -10.87418495  -5.49018850  -1.58970664   6.79209543  -2.18888042
+              Jun          Jul          Aug          Sep          Oct
+2010           NA  -0.90815056  -2.81334275  -1.35329719  -0.15592891
+2011   0.26820446   0.66069606  -0.37264596  -1.70470389  -1.56005920
+2012   1.16819817  -0.47131360   0.70904812   0.58285344  -1.19745291
+2013   2.16653225  -1.67502148  -1.25060442  -1.65783664  -1.38170491
+2014  -0.36130533  -0.27709681   1.25453471   2.44854852   1.81438338
+2015  -1.58130554  -0.96337181  -4.86481113  -4.45774464   1.71472863
+2016  -3.52015854   0.16537273  -0.20821496  -0.40061294  -0.26874620
+2017  -2.49823479  -1.86823431  -2.52084213  -4.35808548   1.06073772
+2018  -2.04437800   3.37005369   8.09981242   8.93381273  -1.99302370
+2019   4.43538121           NA           NA           NA           NA
+              Nov          Dec
+2010  -0.88766328   2.44626118
+2011  -2.56822011  -1.25035195
+2012  -2.86252819  -1.81127524
+2013   0.66199626   0.92536418
+2014   2.21760647   2.07064822
+2015   3.14489435   5.11303147
+2016  -1.20706224   0.67186055
+2017  -0.03820632   0.40029063
+2018  -0.42788303 -10.53289512
+2019           NA           NA
+
+$figure
+ [1] -0.350245676 -0.709259171 -0.529048398  0.906877028 -0.272078662
+ [6] -0.402872004  0.296273436  0.393833084  0.005291061  0.786826908
+[11]  0.536440778 -0.662038384
+
+$type
+[1] "additive"
+
+attr(,"class")
+[1] "decomposed.ts"</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(dec)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-2-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>ad_dec<span class="ot">=</span>MSFT.ts<span class="sc">-</span>dec<span class="sc">$</span>seasonal</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(MSFT.ts,<span class="at">main=</span><span class="st">"Original vs Ad.S"</span>,<span class="at">ylab=</span><span class="st">"Price"</span>,<span class="at">xlab=</span><span class="st">"Time"</span>,<span class="at">col=</span><span class="st">"red"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(ad_dec,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topleft"</span>,<span class="at">legend=</span><span class="fu">c</span>(<span class="st">"Original"</span>,<span class="st">"Adjusted"</span>),<span class="at">col=</span><span class="fu">c</span>(<span class="st">"red"</span>,<span class="st">"blue"</span>),<span class="at">lty=</span><span class="dv">1</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-2-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>HW<span class="ot">=</span><span class="fu">HoltWinters</span>(MSFT.ts,<span class="at">seasonal=</span><span class="st">"additive"</span>)</span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>HW</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Holt-Winters exponential smoothing with trend and additive seasonal component.
+
+Call:
+HoltWinters(x = MSFT.ts, seasonal = "additive")
+
+Smoothing parameters:
+ alpha: 0.8081951
+ beta : 0.06711894
+ gamma: 0.3070682
+
+Coefficients:
+            [,1]
+a   155.72063694
+b     3.14592341
+s1    1.83644081
+s2    1.13833328
+s3    0.47781402
+s4    0.95540145
+s5   -0.65718658
+s6   -0.04486145
+s7    0.35617170
+s8   -1.05558191
+s9   -1.38982893
+s10   0.27759949
+s11   0.52428442
+s12   0.95696130</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(HW,<span class="at">main=</span><span class="st">"HoltWinters"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-2-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>prediction<span class="ot">=</span><span class="fu">predict</span>(HW,<span class="at">n.ahead=</span><span class="dv">10</span>,<span class="at">prediction.interval=</span>T,<span class="at">level=</span><span class="fl">0.95</span>)</span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>prediction</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>              fit      upr      lwr
+Jan 2020 160.7030 167.4541 153.9519
+Feb 2020 163.1508 172.0659 154.2357
+Mar 2020 165.6362 176.4888 154.7837
+Apr 2020 169.2597 181.9382 156.5812
+May 2020 170.7931 185.2377 156.3485
+Jun 2020 174.5513 190.7300 158.3726
+Jul 2020 178.0983 195.9960 160.2006
+Aug 2020 179.8324 199.4448 160.2201
+Sep 2020 182.6441 203.9741 161.3141
+Oct 2020 187.4575 210.5132 164.4017</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(prediction,<span class="at">main=</span><span class="st">"MSFT prediction using HoltWinters"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-2-5.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a>forecast<span class="ot">=</span><span class="fu">forecast</span>(HW,<span class="at">h=</span><span class="dv">10</span>,<span class="at">level=</span><span class="fu">c</span>(<span class="fl">0.80</span>,<span class="fl">0.95</span>))</span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>forecast</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>         Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
+Jan 2020       160.7030 156.2887 165.1173 153.9519 167.4541
+Feb 2020       163.1508 157.3216 168.9801 154.2357 172.0659
+Mar 2020       165.6362 158.5401 172.7323 154.7837 176.4888
+Apr 2020       169.2597 160.9697 177.5498 156.5812 181.9382
+May 2020       170.7931 161.3483 180.2379 156.3485 185.2377
+Jun 2020       174.5513 163.9726 185.1300 158.3726 190.7300
+Jul 2020       178.0983 166.3956 189.8009 160.2006 195.9960
+Aug 2020       179.8324 167.0086 192.6563 160.2201 199.4448
+Sep 2020       182.6441 168.6972 196.5910 161.3141 203.9741
+Oct 2020       187.4575 172.3821 202.5328 164.4017 210.5132</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(forecast,<span class="at">main=</span><span class="st">"MSFT forecast using HoltWinters"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-2-6.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>residuals<span class="ot">=</span>forecast<span class="sc">$</span>residuals</span>
+<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a>residuals</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>              Jan          Feb          Mar          Apr          May
+2010           NA           NA           NA           NA           NA
+2011  -0.17519775   0.13776566   0.15003803   0.04062846   0.01536056
+2012   3.03842884   3.41689596   1.97787305  -0.56354860  -2.01131031
+2013   0.44164249   1.57206492   2.28932898   3.95453191   2.85446572
+2014  -0.50756377   0.99679407   3.44562931  -0.74080660   0.74064937
+2015  -6.75471685   2.56395157  -1.50859102   6.62747834  -0.05364583
+2016  -1.19743366  -4.43146176   4.17950023  -5.40193867   2.70852045
+2017   1.69378571  -0.59202716   1.84452872   1.92514867   1.42535370
+2018   7.43904225  -0.96808999  -3.55323072  -0.13754823   4.28785331
+2019  -1.19828689   7.25311882   6.74986015  11.65955203  -6.63185675
+              Jun          Jul          Aug          Sep          Oct
+2010           NA           NA           NA           NA           NA
+2011  -0.05330014   1.55958818   1.32986484  -2.27632408  -1.07140669
+2012  -0.24050241  -0.82303670   2.60741976  -1.40058968  -3.58853543
+2013  -1.06581934  -2.51609739   2.20346113  -0.49444173  -0.53917042
+2014  -0.31667078   1.17981868   2.95822594   0.40479909  -2.11452837
+2015  -3.51526032   1.67689865  -1.79581997  -0.09218546   5.50224893
+2016  -1.93850731   4.43514045   2.33800567  -0.30821192  -0.77238619
+2017  -1.59065625   2.01870871   2.80796901  -0.88304470   4.88403473
+2018  -0.96095374   4.79167857   6.44386795   1.17764272 -12.08242555
+2019   7.36085131   0.26793761   0.41916818  -0.68335614  -0.06200813
+              Nov          Dec
+2010           NA           NA
+2011  -0.09903535  -1.69760837
+2012  -1.42606738  -2.02965854
+2013   2.71028962  -2.34658456
+2014   0.28166169  -3.30253177
+2015   2.41855149  -0.45411946
+2016   0.06817592   0.09091387
+2017   0.99328282  -0.95470247
+2018   0.65766656 -11.65767240
+2019   5.41486643   4.46049187</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>residuals<span class="ot">=</span><span class="fu">na.omit</span>(residuals)</span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>residuals</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>              Jan          Feb          Mar          Apr          May
+2011  -0.17519775   0.13776566   0.15003803   0.04062846   0.01536056
+2012   3.03842884   3.41689596   1.97787305  -0.56354860  -2.01131031
+2013   0.44164249   1.57206492   2.28932898   3.95453191   2.85446572
+2014  -0.50756377   0.99679407   3.44562931  -0.74080660   0.74064937
+2015  -6.75471685   2.56395157  -1.50859102   6.62747834  -0.05364583
+2016  -1.19743366  -4.43146176   4.17950023  -5.40193867   2.70852045
+2017   1.69378571  -0.59202716   1.84452872   1.92514867   1.42535370
+2018   7.43904225  -0.96808999  -3.55323072  -0.13754823   4.28785331
+2019  -1.19828689   7.25311882   6.74986015  11.65955203  -6.63185675
+              Jun          Jul          Aug          Sep          Oct
+2011  -0.05330014   1.55958818   1.32986484  -2.27632408  -1.07140669
+2012  -0.24050241  -0.82303670   2.60741976  -1.40058968  -3.58853543
+2013  -1.06581934  -2.51609739   2.20346113  -0.49444173  -0.53917042
+2014  -0.31667078   1.17981868   2.95822594   0.40479909  -2.11452837
+2015  -3.51526032   1.67689865  -1.79581997  -0.09218546   5.50224893
+2016  -1.93850731   4.43514045   2.33800567  -0.30821192  -0.77238619
+2017  -1.59065625   2.01870871   2.80796901  -0.88304470   4.88403473
+2018  -0.96095374   4.79167857   6.44386795   1.17764272 -12.08242555
+2019   7.36085131   0.26793761   0.41916818  -0.68335614  -0.06200813
+              Nov          Dec
+2011  -0.09903535  -1.69760837
+2012  -1.42606738  -2.02965854
+2013   2.71028962  -2.34658456
+2014   0.28166169  -3.30253177
+2015   2.41855149  -0.45411946
+2016   0.06817592   0.09091387
+2017   0.99328282  -0.95470247
+2018   0.65766656 -11.65767240
+2019   5.41486643   4.46049187</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(residuals,<span class="at">main=</span><span class="st">"Residuals"</span>,<span class="at">ylab=</span><span class="st">"Residuals"</span>,<span class="at">xlab=</span><span class="st">"Time"</span>)</span>
+<span id="cb82-2"><a href="#cb82-2" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-2-7.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(residuals)</span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(residuals)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-2-8.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Box.test</span>(residuals,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Box-Ljung test
+
+data:  residuals
+X-squared = 27.429, df = 20, p-value = 0.1236</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(residuals)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Shapiro-Wilk normality test
+
+data:  residuals
+W = 0.94243, p-value = 0.0001494</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="fu">jarque.bera.test</span>(residuals)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Jarque Bera Test
+
+data:  residuals
+X-squared = 35.857, df = 2, p-value = 1.636e-08</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(residuals,<span class="st">"pnorm"</span>,<span class="at">mean=</span><span class="fu">mean</span>(residuals),<span class="at">sd=</span><span class="fu">sd</span>(residuals))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic one-sample Kolmogorov-Smirnov test
+
+data:  residuals
+D = 0.10089, p-value = 0.2216
+alternative hypothesis: two-sided</code></pre>
+</div>
+</div>
+<section id="answers-for-exercise-2" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="answers-for-exercise-2"><span class="header-section-number">2.1</span> Answers for exercise 2</h2>
+<ul>
+<li>ACF &amp; PACF Plot:</li>
+</ul>
+<p>The residuals show no significant autocorrelation, as almost all lags fall within the significance bounds</p>
+<ul>
+<li>Ljung-Box Test:</li>
+</ul>
+<p>With a p-value of 0.1236 (&gt; 0.05), we fail to reject the null hypothesis of no autocorrelation (white noise).<br>
+The residuals are not perfectly normal (Shapiro test # jurqe bera &lt; 0.05)</p>
+</section>
+</section>
+<section id="exercise-3" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Exercise 3</h1>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>data<span class="ot">=</span><span class="fu">read_excel</span>(<span class="st">"c7ex5.xls"</span>)</span>
+<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+  OBS      X1    X2    X3
+  &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 1      22.1 101.   53.8
+2 2      24.4 101.   55  
+3 3      19.7 100.0  54.8
+4 4      13.2  96.0  55.0
+5 5      22.8  99.0  56.6</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>ser1<span class="ot">=</span>data<span class="sc">$</span>X1</span>
+<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>ser1.ts<span class="ot">=</span><span class="fu">ts</span>(ser1,<span class="at">start=</span><span class="dv">1</span>,<span class="at">frequency=</span><span class="dv">1</span>)</span>
+<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ser1,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 22.10000 24.40000 19.66114 13.17239 22.76479</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>ser2<span class="ot">=</span>data<span class="sc">$</span>X2</span>
+<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a>ser2.ts<span class="ot">=</span><span class="fu">ts</span>(ser2,<span class="at">start=</span><span class="dv">1</span>,<span class="at">frequency=</span><span class="dv">1</span>)</span>
+<span id="cb96-3"><a href="#cb96-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ser2,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 101.20000 101.07199  99.97172  96.03309  99.04480</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>ser3<span class="ot">=</span>data<span class="sc">$</span>X3</span>
+<span id="cb98-2"><a href="#cb98-2" aria-hidden="true" tabindex="-1"></a>ser3.ts<span class="ot">=</span><span class="fu">ts</span>(ser3,<span class="at">start=</span><span class="dv">1</span>,<span class="at">frequency=</span><span class="dv">1</span>)</span>
+<span id="cb98-3"><a href="#cb98-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ser3,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 53.80000 55.00000 54.79635 55.00262 56.59452</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>))</span>
+<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ser1.ts,<span class="at">main=</span><span class="st">"ser1"</span>,<span class="at">ylab=</span><span class="st">"value"</span>,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb100-3"><a href="#cb100-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ser2.ts,<span class="at">main=</span><span class="st">"ser2"</span>,<span class="at">ylab=</span><span class="st">"value"</span>,<span class="at">col=</span><span class="st">"red"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb100-4"><a href="#cb100-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ser3.ts,<span class="at">main=</span><span class="st">"ser3"</span>,<span class="at">ylab=</span><span class="st">"value"</span>,<span class="at">col=</span><span class="st">"green"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb101"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ser1.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  13.17   73.43  269.67  237.41  382.05  439.50 </code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb103"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ser2.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  21.59   51.51   97.66   88.53  119.80  151.40 </code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb105"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ser3.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  30.49   49.31   57.92   61.17   72.26  103.91 </code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb107"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb107-2"><a href="#cb107-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(ser1.ts,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb107-3"><a href="#cb107-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(ser1.ts,<span class="at">lag.max=</span><span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-3-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb108"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(ser1.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Augmented Dickey-Fuller Test
+
+data:  ser1.ts
+Dickey-Fuller = -1.5931, Lag order = 6, p-value = 0.7467
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb110"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb110-1"><a href="#cb110-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(ser1.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Phillips-Perron Unit Root Test
+
+data:  ser1.ts
+Dickey-Fuller Z(alpha) = -5.6692, Truncation lag parameter = 4, p-value
+= 0.7914
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb112"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb112-1"><a href="#cb112-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(ser1.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    KPSS Test for Level Stationarity
+
+data:  ser1.ts
+KPSS Level = 4.3617, Truncation lag parameter = 4, p-value = 0.01</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(ser2.ts,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb114-3"><a href="#cb114-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(ser2.ts,<span class="at">lag.max=</span><span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-3-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(ser2.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Augmented Dickey-Fuller Test
+
+data:  ser2.ts
+Dickey-Fuller = -2.4621, Lag order = 6, p-value = 0.3821
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(ser2.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Phillips-Perron Unit Root Test
+
+data:  ser2.ts
+Dickey-Fuller Z(alpha) = -5.4487, Truncation lag parameter = 4, p-value
+= 0.8038
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(ser2.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    KPSS Test for Level Stationarity
+
+data:  ser2.ts
+KPSS Level = 2.9049, Truncation lag parameter = 4, p-value = 0.01</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb121"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb121-2"><a href="#cb121-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(ser3,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb121-3"><a href="#cb121-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(ser3,<span class="at">lag.max=</span><span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/exercise-3-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb122"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(ser3.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Augmented Dickey-Fuller Test
+
+data:  ser3.ts
+Dickey-Fuller = -1.5941, Lag order = 6, p-value = 0.7463
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb124"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(ser3.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Phillips-Perron Unit Root Test
+
+data:  ser3.ts
+Dickey-Fuller Z(alpha) = -7.0839, Truncation lag parameter = 4, p-value
+= 0.7114
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(ser3.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    KPSS Test for Level Stationarity
+
+data:  ser3.ts
+KPSS Level = 1.095, Truncation lag parameter = 4, p-value = 0.01</code></pre>
+</div>
+</div>
+<p>All 3 series are non-stationary and correlation:<br>
+ACF stays positive &amp; pacf has a few significant spekes adf &amp; pp p-value &gt; 0.05 - kpss p-value &lt; 0.05 we should keep going with return and difference</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb128"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>return1<span class="ot">=</span><span class="fu">diff</span>(ser1.ts)</span>
+<span id="cb128-2"><a href="#cb128-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return1,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Time Series:
+Start = 2 
+End = 6 
+Frequency = 1 
+[1]  2.300000 -4.738855 -6.488752  9.592396 12.620457</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb130"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a>return2<span class="ot">=</span><span class="fu">diff</span>(ser2.ts)</span>
+<span id="cb130-2"><a href="#cb130-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return2,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Time Series:
+Start = 2 
+End = 6 
+Frequency = 1 
+[1] -0.1280097 -1.1002707 -3.9386341  3.0117132 -1.8804590</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb132"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>return3<span class="ot">=</span><span class="fu">diff</span>(ser3.ts)</span>
+<span id="cb132-2"><a href="#cb132-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return3,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Time Series:
+Start = 2 
+End = 6 
+Frequency = 1 
+[1]  1.2000000 -0.2036476  0.2062637  1.5919036  4.8195657</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb134"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(return1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Augmented Dickey-Fuller Test
+
+data:  return1
+Dickey-Fuller = -5.3548, Lag order = 6, p-value = 0.01
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb136"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(return1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Phillips-Perron Unit Root Test
+
+data:  return1
+Dickey-Fuller Z(alpha) = -87.323, Truncation lag parameter = 4, p-value
+= 0.01
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb138"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(return1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    KPSS Test for Level Stationarity
+
+data:  return1
+KPSS Level = 0.10123, Truncation lag parameter = 4, p-value = 0.1</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb140"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(return2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Augmented Dickey-Fuller Test
+
+data:  return2
+Dickey-Fuller = -4.063, Lag order = 6, p-value = 0.01
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb142"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(return2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Phillips-Perron Unit Root Test
+
+data:  return2
+Dickey-Fuller Z(alpha) = -131.79, Truncation lag parameter = 4, p-value
+= 0.01
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb144"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb144-1"><a href="#cb144-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(return2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    KPSS Test for Level Stationarity
+
+data:  return2
+KPSS Level = 0.1717, Truncation lag parameter = 4, p-value = 0.1</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb146"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb146-1"><a href="#cb146-1" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(return3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Augmented Dickey-Fuller Test
+
+data:  return3
+Dickey-Fuller = -5.9952, Lag order = 6, p-value = 0.01
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb148"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb148-1"><a href="#cb148-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(return3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Phillips-Perron Unit Root Test
+
+data:  return3
+Dickey-Fuller Z(alpha) = -77.821, Truncation lag parameter = 4, p-value
+= 0.01
+alternative hypothesis: stationary</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb150"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb150-1"><a href="#cb150-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(return3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    KPSS Test for Level Stationarity
+
+data:  return3
+KPSS Level = 0.094388, Truncation lag parameter = 4, p-value = 0.1</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb152"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb152-1"><a href="#cb152-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">2</span>))</span>
+<span id="cb152-2"><a href="#cb152-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(return1,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb152-3"><a href="#cb152-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(return1,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb152-4"><a href="#cb152-4" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(return2,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb152-5"><a href="#cb152-5" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(return2,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb152-6"><a href="#cb152-6" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(return3,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb152-7"><a href="#cb152-7" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(return3,<span class="at">lag.max=</span><span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Or we can do it:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb153"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb153-1"><a href="#cb153-1" aria-hidden="true" tabindex="-1"></a>returns_total<span class="ot">=</span><span class="fu">cbind</span>(return1,return2,return3)</span>
+<span id="cb153-2"><a href="#cb153-2" aria-hidden="true" tabindex="-1"></a><span class="fu">apply</span>(returns_total,<span class="dv">2</span>,Box.test,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>$return1
+
+    Box-Ljung test
+
+data:  newX[, i]
+X-squared = 108.59, df = 20, p-value = 3.553e-14
+
+
+$return2
+
+    Box-Ljung test
+
+data:  newX[, i]
+X-squared = 145.85, df = 20, p-value &lt; 2.2e-16
+
+
+$return3
+
+    Box-Ljung test
+
+data:  newX[, i]
+X-squared = 114.88, df = 20, p-value = 2.554e-15</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb155"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb155-1"><a href="#cb155-1" aria-hidden="true" tabindex="-1"></a>model1<span class="ot">=</span><span class="fu">auto.arima</span>(return1)</span>
+<span id="cb155-2"><a href="#cb155-2" aria-hidden="true" tabindex="-1"></a>model1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Series: return1 
+ARIMA(0,0,2) with non-zero mean 
+
+Coefficients:
+         ma1     ma2    mean
+      0.7137  0.2551  1.9348
+s.e.  0.0649  0.0629  0.6628
+
+sigma^2 = 25.31:  log likelihood = -663.3
+AIC=1334.6   AICc=1334.79   BIC=1348.16</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb157"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb157-1"><a href="#cb157-1" aria-hidden="true" tabindex="-1"></a>model2<span class="ot">=</span><span class="fu">auto.arima</span>(return2)</span>
+<span id="cb157-2"><a href="#cb157-2" aria-hidden="true" tabindex="-1"></a>model2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Series: return2 
+ARIMA(1,0,1) with zero mean 
+
+Coefficients:
+         ar1      ma1
+      0.8021  -0.4615
+s.e.  0.0692   0.1001
+
+sigma^2 = 9.025:  log likelihood = -550.82
+AIC=1107.63   AICc=1107.75   BIC=1117.8</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb159"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb159-1"><a href="#cb159-1" aria-hidden="true" tabindex="-1"></a>model3<span class="ot">=</span><span class="fu">auto.arima</span>(return3)</span>
+<span id="cb159-2"><a href="#cb159-2" aria-hidden="true" tabindex="-1"></a>model3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Series: return3 
+ARIMA(3,0,1) with zero mean 
+
+Coefficients:
+         ar1      ar2     ar3     ma1
+      0.7791  -0.7022  0.2142  0.4871
+s.e.  0.1176   0.1143  0.0993  0.1100
+
+sigma^2 = 4.133:  log likelihood = -465.25
+AIC=940.5   AICc=940.79   BIC=957.45</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb161"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb161-1"><a href="#cb161-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tsdiag</span>(model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb162"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb162-1"><a href="#cb162-1" aria-hidden="true" tabindex="-1"></a><span class="fu">checkresiduals</span>(model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-2-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Ljung-Box test
+
+data:  Residuals from ARIMA(0,0,2) with non-zero mean
+Q* = 3.8734, df = 8, p-value = 0.8684
+
+Model df: 2.   Total lags used: 10</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb164"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb164-1"><a href="#cb164-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tsdiag</span>(model2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-2-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb165"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb165-1"><a href="#cb165-1" aria-hidden="true" tabindex="-1"></a><span class="fu">checkresiduals</span>(model2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-2-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Ljung-Box test
+
+data:  Residuals from ARIMA(1,0,1) with zero mean
+Q* = 5.4566, df = 8, p-value = 0.7078
+
+Model df: 2.   Total lags used: 10</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb167"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb167-1"><a href="#cb167-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tsdiag</span>(model3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-2-5.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb168"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb168-1"><a href="#cb168-1" aria-hidden="true" tabindex="-1"></a><span class="fu">checkresiduals</span>(model3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-2-6.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Ljung-Box test
+
+data:  Residuals from ARIMA(3,0,1) with zero mean
+Q* = 6.2461, df = 6, p-value = 0.3962
+
+Model df: 4.   Total lags used: 10</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb170"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb170-1"><a href="#cb170-1" aria-hidden="true" tabindex="-1"></a>res1<span class="ot">=</span><span class="fu">residuals</span>(model1)</span>
+<span id="cb170-2"><a href="#cb170-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(res1,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Time Series:
+Start = 2 
+End = 6 
+Frequency = 1 
+[1]  0.2910655 -6.6686829 -3.6241980 11.8796853  3.1371996</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb172"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb172-1"><a href="#cb172-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb172-2"><a href="#cb172-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(res1,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb172-3"><a href="#cb172-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(res1,<span class="at">lag.max=</span><span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-2-7.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb173"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb173-1"><a href="#cb173-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Box.test</span>(res1,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Box-Ljung test
+
+data:  res1
+X-squared = 13.748, df = 20, p-value = 0.843</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb175"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb175-1"><a href="#cb175-1" aria-hidden="true" tabindex="-1"></a>res2<span class="ot">=</span><span class="fu">residuals</span>(model2)</span>
+<span id="cb175-2"><a href="#cb175-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(res2,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Time Series:
+Start = 2 
+End = 6 
+Frequency = 1 
+[1] -0.1111951 -1.0159559 -3.4947238  4.5615291 -2.1929673</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb177"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb177-1"><a href="#cb177-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb177-2"><a href="#cb177-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(res2,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb177-3"><a href="#cb177-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(res2,<span class="at">lag.max=</span><span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-2-8.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb178"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb178-1"><a href="#cb178-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Box.test</span>(res2,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Box-Ljung test
+
+data:  res2
+X-squared = 18.68, df = 20, p-value = 0.5427</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb180"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb180-1"><a href="#cb180-1" aria-hidden="true" tabindex="-1"></a>res3<span class="ot">=</span><span class="fu">residuals</span>(model3)</span>
+<span id="cb180-2"><a href="#cb180-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(res3,<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Time Series:
+Start = 2 
+End = 6 
+Frequency = 1 
+[1]  0.6851210 -0.5637058  0.9933426  0.5935008  3.4643470</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb182"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb182-1"><a href="#cb182-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb182-2"><a href="#cb182-2" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(res3,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb182-3"><a href="#cb182-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(res3,<span class="at">lag.max=</span><span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-2-9.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb183"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb183-1"><a href="#cb183-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Box.test</span>(res3,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Box-Ljung test
+
+data:  res3
+X-squared = 14.492, df = 20, p-value = 0.8047</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb185"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb185-1"><a href="#cb185-1" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(res1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Shapiro-Wilk normality test
+
+data:  res1
+W = 0.99692, p-value = 0.9468</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb187"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb187-1"><a href="#cb187-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(res1, <span class="st">"pnorm"</span>, <span class="at">mean =</span> <span class="fu">mean</span>(res1), <span class="at">sd =</span> <span class="fu">sd</span>(res1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic one-sample Kolmogorov-Smirnov test
+
+data:  res1
+D = 0.028853, p-value = 0.9932
+alternative hypothesis: two-sided</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb189"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb189-1"><a href="#cb189-1" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(res2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Shapiro-Wilk normality test
+
+data:  res2
+W = 0.99427, p-value = 0.5711</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb191"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb191-1"><a href="#cb191-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(res2, <span class="st">"pnorm"</span>, <span class="at">mean =</span> <span class="fu">mean</span>(res2), <span class="at">sd =</span> <span class="fu">sd</span>(res2))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic one-sample Kolmogorov-Smirnov test
+
+data:  res2
+D = 0.045046, p-value = 0.7658
+alternative hypothesis: two-sided</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb193"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb193-1"><a href="#cb193-1" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(res3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Shapiro-Wilk normality test
+
+data:  res3
+W = 0.9934, p-value = 0.4414</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb195"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb195-1"><a href="#cb195-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(res3, <span class="st">"pnorm"</span>, <span class="at">mean =</span> <span class="fu">mean</span>(res3), <span class="at">sd =</span> <span class="fu">sd</span>(res3))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic one-sample Kolmogorov-Smirnov test
+
+data:  res3
+D = 0.039753, p-value = 0.8794
+alternative hypothesis: two-sided</code></pre>
+</div>
+</div>
+<p>All 3 series are stationary. Using <code>auto.arima</code> on series:<br>
+We obtain low-order ARIMA(p,1,q) models:<br>
+ARIMA(0,1,2), ARIMA(1,1,1) and ARIMA(3,1,1) for the series<br>
+The ACF/PACF of the residuals show no significant autocorrelation.<br>
+The <code>Ljung–Box</code> tests on residuals (lag 20) have large p-values (&gt; 0.5) (white noise).</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb197"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb197-1"><a href="#cb197-1" aria-hidden="true" tabindex="-1"></a>forecast1<span class="ot">=</span><span class="fu">forecast</span>(model1,<span class="at">h=</span><span class="dv">5</span>)</span>
+<span id="cb197-2"><a href="#cb197-2" aria-hidden="true" tabindex="-1"></a>forecast1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Point Forecast     Lo 80    Hi 80      Lo 95    Hi 95
+221       5.165362 -1.281541 11.61227  -4.694326 15.02505
+222       2.431788 -5.488819 10.35240  -9.681735 14.54531
+223       1.934769 -6.154838 10.02438 -10.437218 14.30676
+224       1.934769 -6.154838 10.02438 -10.437218 14.30676
+225       1.934769 -6.154838 10.02438 -10.437218 14.30676</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb199"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb199-1"><a href="#cb199-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(forecast1,<span class="at">main=</span><span class="st">"Forecast for Series1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb200"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb200-1"><a href="#cb200-1" aria-hidden="true" tabindex="-1"></a>forecast2<span class="ot">=</span><span class="fu">forecast</span>(model2,<span class="at">h=</span><span class="dv">5</span>)</span>
+<span id="cb200-2"><a href="#cb200-2" aria-hidden="true" tabindex="-1"></a>forecast2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Point Forecast     Lo 80    Hi 80     Lo 95    Hi 95
+221     -1.7425637 -5.592582 2.107454 -7.630658 4.145531
+222     -1.3976751 -5.464913 2.669563 -7.617978 4.822628
+223     -1.1210469 -5.322096 3.080002 -7.545997 5.303903
+224     -0.8991690 -5.184095 3.385757 -7.452398 5.654059
+225     -0.7212053 -5.059235 3.616824 -7.355648 5.913238</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb202"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb202-1"><a href="#cb202-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(forecast2,<span class="at">main=</span><span class="st">"Forecast for Series2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-3-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb203"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb203-1"><a href="#cb203-1" aria-hidden="true" tabindex="-1"></a>forecast3<span class="ot">=</span><span class="fu">forecast</span>(model3,<span class="at">h=</span><span class="dv">5</span>)</span>
+<span id="cb203-2"><a href="#cb203-2" aria-hidden="true" tabindex="-1"></a>forecast3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Point Forecast     Lo 80     Hi 80     Lo 95      Hi 95
+221     -4.1349545 -6.740425 -1.529484 -8.119678 -0.1502309
+222     -0.6454578 -4.849203  3.558288 -7.074532  5.7836161
+223      1.6729206 -2.595563  5.941404 -4.855162  8.2010033
+224      0.8706380 -3.558273  5.299549 -5.902797  7.6440731
+225     -0.6346691 -5.123908  3.854570 -7.500367  6.2310290</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb205"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb205-1"><a href="#cb205-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(forecast3,<span class="at">main=</span><span class="st">"Forecast for Series3"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TS_analysis_files/figure-html/unnamed-chunk-3-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We then computed 5-step-ahead forecasts for each return series using a forecasting function obtaining point forecasts and 95% prediction intervals for the next 5 period.</p>
+<!-- -->
+
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="sourceCode" id="cb206" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb206-1"><a href="#cb206-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb206-2"><a href="#cb206-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Time Series Analysis"</span></span>
+<span id="cb206-3"><a href="#cb206-3" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Mohsen Asgari"</span></span>
+<span id="cb206-4"><a href="#cb206-4" aria-hidden="true" tabindex="-1"></a><span class="an">affiliation:</span><span class="co"> University of Luxembourg</span></span>
+<span id="cb206-5"><a href="#cb206-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "2025-12-05"</span></span>
+<span id="cb206-6"><a href="#cb206-6" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span><span class="co"> </span></span>
+<span id="cb206-7"><a href="#cb206-7" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb206-8"><a href="#cb206-8" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb206-9"><a href="#cb206-9" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 3</span></span>
+<span id="cb206-10"><a href="#cb206-10" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-location: left</span></span>
+<span id="cb206-11"><a href="#cb206-11" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-title: "Table of Contents"</span></span>
+<span id="cb206-12"><a href="#cb206-12" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: true</span></span>
+<span id="cb206-13"><a href="#cb206-13" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb206-14"><a href="#cb206-14" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb206-15"><a href="#cb206-15" aria-hidden="true" tabindex="-1"></a><span class="co">  pdf:</span></span>
+<span id="cb206-16"><a href="#cb206-16" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb206-17"><a href="#cb206-17" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb206-18"><a href="#cb206-18" aria-hidden="true" tabindex="-1"></a><span class="co">    fig-width: 8</span></span>
+<span id="cb206-19"><a href="#cb206-19" aria-hidden="true" tabindex="-1"></a><span class="co">    fig-height: 6</span></span>
+<span id="cb206-20"><a href="#cb206-20" aria-hidden="true" tabindex="-1"></a><span class="an">engine:</span><span class="co"> knitr</span></span>
+<span id="cb206-21"><a href="#cb206-21" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb206-22"><a href="#cb206-22" aria-hidden="true" tabindex="-1"></a><span class="an">message:</span><span class="co"> false</span></span>
+<span id="cb206-23"><a href="#cb206-23" aria-hidden="true" tabindex="-1"></a><span class="an">warning:</span><span class="co"> false</span></span>
+<span id="cb206-24"><a href="#cb206-24" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb206-25"><a href="#cb206-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-26"><a href="#cb206-26" aria-hidden="true" tabindex="-1"></a><span class="in">```{r loading libraries}</span></span>
+<span id="cb206-27"><a href="#cb206-27" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xts)</span>
+<span id="cb206-28"><a href="#cb206-28" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tseries)</span>
+<span id="cb206-29"><a href="#cb206-29" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xts)</span>
+<span id="cb206-30"><a href="#cb206-30" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(zoo)</span>
+<span id="cb206-31"><a href="#cb206-31" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forecast)</span>
+<span id="cb206-32"><a href="#cb206-32" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<span id="cb206-33"><a href="#cb206-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-34"><a href="#cb206-34" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb206-35"><a href="#cb206-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-36"><a href="#cb206-36" aria-hidden="true" tabindex="-1"></a><span class="fu"># Exercise 1</span></span>
+<span id="cb206-37"><a href="#cb206-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-38"><a href="#cb206-38" aria-hidden="true" tabindex="-1"></a><span class="in">```{r exercise-1}</span></span>
+<span id="cb206-39"><a href="#cb206-39" aria-hidden="true" tabindex="-1"></a>Fund<span class="ot">=</span><span class="fu">read.csv</span>(<span class="st">"8 Funds.csv"</span>,<span class="at">header=</span><span class="cn">TRUE</span>)</span>
+<span id="cb206-40"><a href="#cb206-40" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Fund,<span class="dv">5</span>)</span>
+<span id="cb206-41"><a href="#cb206-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-42"><a href="#cb206-42" aria-hidden="true" tabindex="-1"></a>time<span class="ot">=</span><span class="fu">as.Date</span>(Fund<span class="sc">$</span>Date,<span class="at">format=</span><span class="st">"%m/%d/%Y"</span>)</span>
+<span id="cb206-43"><a href="#cb206-43" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(time,<span class="dv">5</span>)</span>
+<span id="cb206-44"><a href="#cb206-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-45"><a href="#cb206-45" aria-hidden="true" tabindex="-1"></a>Fundnew<span class="ot">=</span>Fund[,<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb206-46"><a href="#cb206-46" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Fundnew,<span class="dv">5</span>)</span>
+<span id="cb206-47"><a href="#cb206-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-48"><a href="#cb206-48" aria-hidden="true" tabindex="-1"></a>Fund.xts<span class="ot">=</span><span class="fu">xts</span>(Fundnew,<span class="at">order.by=</span>time)</span>
+<span id="cb206-49"><a href="#cb206-49" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Fund.xts,<span class="dv">5</span>)</span>
+<span id="cb206-50"><a href="#cb206-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-51"><a href="#cb206-51" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(Fund.xts)</span>
+<span id="cb206-52"><a href="#cb206-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-53"><a href="#cb206-53" aria-hidden="true" tabindex="-1"></a>Fund2<span class="ot">=</span>Fund.xts[,<span class="dv">2</span>]</span>
+<span id="cb206-54"><a href="#cb206-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-55"><a href="#cb206-55" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(Fund2)</span>
+<span id="cb206-56"><a href="#cb206-56" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(Fund2)</span>
+<span id="cb206-57"><a href="#cb206-57" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(Fund2)</span>
+<span id="cb206-58"><a href="#cb206-58" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(Fund2)</span>
+<span id="cb206-59"><a href="#cb206-59" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Fund2)</span>
+<span id="cb206-60"><a href="#cb206-60" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span>(Fund2)</span>
+<span id="cb206-61"><a href="#cb206-61" aria-hidden="true" tabindex="-1"></a><span class="fu">start</span>(Fund2)</span>
+<span id="cb206-62"><a href="#cb206-62" aria-hidden="true" tabindex="-1"></a><span class="fu">end</span>(Fund2)</span>
+<span id="cb206-63"><a href="#cb206-63" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(Fund2)</span>
+<span id="cb206-64"><a href="#cb206-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-65"><a href="#cb206-65" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(Fund2,<span class="at">main=</span><span class="st">"Fund2"</span>,<span class="at">ylab=</span><span class="st">"Price"</span>,<span class="at">xlab=</span><span class="st">"Date"</span>)</span>
+<span id="cb206-66"><a href="#cb206-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-67"><a href="#cb206-67" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb206-68"><a href="#cb206-68" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(Fund2,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-69"><a href="#cb206-69" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(Fund2,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-70"><a href="#cb206-70" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(Fund2)</span>
+<span id="cb206-71"><a href="#cb206-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-72"><a href="#cb206-72" aria-hidden="true" tabindex="-1"></a>return<span class="ot">=</span><span class="fu">diff</span>(<span class="fu">log</span>(Fund2))</span>
+<span id="cb206-73"><a href="#cb206-73" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return,<span class="dv">5</span>)</span>
+<span id="cb206-74"><a href="#cb206-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-75"><a href="#cb206-75" aria-hidden="true" tabindex="-1"></a>return<span class="ot">=</span><span class="fu">na.omit</span>(return)</span>
+<span id="cb206-76"><a href="#cb206-76" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return,<span class="dv">5</span>)</span>
+<span id="cb206-77"><a href="#cb206-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-78"><a href="#cb206-78" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>))</span>
+<span id="cb206-79"><a href="#cb206-79" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(return,<span class="at">main=</span><span class="st">"Returns of Fund2"</span>,<span class="at">ylab=</span><span class="st">"return"</span>,<span class="at">xlab=</span><span class="st">"Date"</span>)</span>
+<span id="cb206-80"><a href="#cb206-80" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(return)</span>
+<span id="cb206-81"><a href="#cb206-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-82"><a href="#cb206-82" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb206-83"><a href="#cb206-83" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(return,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-84"><a href="#cb206-84" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(return,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-85"><a href="#cb206-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-86"><a href="#cb206-86" aria-hidden="true" tabindex="-1"></a>model1<span class="ot">=</span><span class="fu">arima</span>(return,<span class="at">order=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>))</span>
+<span id="cb206-87"><a href="#cb206-87" aria-hidden="true" tabindex="-1"></a>model1</span>
+<span id="cb206-88"><a href="#cb206-88" aria-hidden="true" tabindex="-1"></a>model2<span class="ot">=</span><span class="fu">arima</span>(return,<span class="at">order=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>))</span>
+<span id="cb206-89"><a href="#cb206-89" aria-hidden="true" tabindex="-1"></a>model2</span>
+<span id="cb206-90"><a href="#cb206-90" aria-hidden="true" tabindex="-1"></a>model3<span class="ot">=</span><span class="fu">arima</span>(return,<span class="at">order=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">2</span>))</span>
+<span id="cb206-91"><a href="#cb206-91" aria-hidden="true" tabindex="-1"></a>model3</span>
+<span id="cb206-92"><a href="#cb206-92" aria-hidden="true" tabindex="-1"></a>model4<span class="ot">=</span><span class="fu">arima</span>(return,<span class="at">order=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">2</span>))</span>
+<span id="cb206-93"><a href="#cb206-93" aria-hidden="true" tabindex="-1"></a>model4</span>
+<span id="cb206-94"><a href="#cb206-94" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(model1,model2,model3,model4)</span>
+<span id="cb206-95"><a href="#cb206-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-96"><a href="#cb206-96" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb206-97"><a href="#cb206-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-98"><a href="#cb206-98" aria-hidden="true" tabindex="-1"></a><span class="fu">## Answers for exercise 1</span></span>
+<span id="cb206-99"><a href="#cb206-99" aria-hidden="true" tabindex="-1"></a>The original price series is not stationary, but the returns are:  </span>
+<span id="cb206-100"><a href="#cb206-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-101"><a href="#cb206-101" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Price Series (Fund2):  </span>
+<span id="cb206-102"><a href="#cb206-102" aria-hidden="true" tabindex="-1"></a>The (ADF) test yielded a p-value of 0.6281 (&gt; 0.05). We cannot reject the null hypothesis of a unit root, it is non-stationary.</span>
+<span id="cb206-103"><a href="#cb206-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-104"><a href="#cb206-104" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Return Series (return):  </span>
+<span id="cb206-105"><a href="#cb206-105" aria-hidden="true" tabindex="-1"></a>After taking the log-difference, the ADF test yielded a p-value of 0.01 (&lt; 0.05). We reject the null hypothesis, it is stationary.  </span>
+<span id="cb206-106"><a href="#cb206-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-107"><a href="#cb206-107" aria-hidden="true" tabindex="-1"></a>Since differencing the data once produces a stationary series (the return), the original process is integrated of order 1 (random walk).  </span>
+<span id="cb206-108"><a href="#cb206-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-109"><a href="#cb206-109" aria-hidden="true" tabindex="-1"></a>The ARMA(1,2) model is the best because it has the lowest AIC (-20202.00).  </span>
+<span id="cb206-110"><a href="#cb206-110" aria-hidden="true" tabindex="-1"></a>The plots of ACF and PACF confirm stationarity and mostly stay within the significance bounds</span>
+<span id="cb206-111"><a href="#cb206-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-112"><a href="#cb206-112" aria-hidden="true" tabindex="-1"></a><span class="fu"># Exercise 2</span></span>
+<span id="cb206-113"><a href="#cb206-113" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-114"><a href="#cb206-114" aria-hidden="true" tabindex="-1"></a><span class="in">```{r exercise-2}</span></span>
+<span id="cb206-115"><a href="#cb206-115" aria-hidden="true" tabindex="-1"></a>MSFT<span class="ot">=</span><span class="fu">read.csv</span>(<span class="st">"MSFT.csv"</span>,<span class="at">header=</span><span class="cn">TRUE</span>)</span>
+<span id="cb206-116"><a href="#cb206-116" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFT,<span class="dv">5</span>)</span>
+<span id="cb206-117"><a href="#cb206-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-118"><a href="#cb206-118" aria-hidden="true" tabindex="-1"></a>time<span class="ot">=</span><span class="fu">as.Date</span>(MSFT<span class="sc">$</span>Date,<span class="at">format=</span><span class="st">"%m/%d/%Y"</span>)</span>
+<span id="cb206-119"><a href="#cb206-119" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(time,<span class="dv">5</span>)</span>
+<span id="cb206-120"><a href="#cb206-120" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-121"><a href="#cb206-121" aria-hidden="true" tabindex="-1"></a>MSFTnew<span class="ot">=</span>MSFT[,<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb206-122"><a href="#cb206-122" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFTnew,<span class="dv">5</span>)</span>
+<span id="cb206-123"><a href="#cb206-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-124"><a href="#cb206-124" aria-hidden="true" tabindex="-1"></a>MSFT.xts<span class="ot">=</span><span class="fu">xts</span>(MSFTnew,time)</span>
+<span id="cb206-125"><a href="#cb206-125" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFT.xts,<span class="dv">5</span>)</span>
+<span id="cb206-126"><a href="#cb206-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-127"><a href="#cb206-127" aria-hidden="true" tabindex="-1"></a>MSFT.ts<span class="ot">=</span><span class="fu">ts</span>(MSFT[,<span class="dv">2</span>],<span class="at">start=</span><span class="fu">c</span>(<span class="dv">2010</span>,<span class="dv">1</span>),<span class="at">end=</span><span class="fu">c</span>(<span class="dv">2019</span>,<span class="dv">12</span>),<span class="at">frequency=</span><span class="dv">12</span>)</span>
+<span id="cb206-128"><a href="#cb206-128" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFT.ts,<span class="dv">5</span>)</span>
+<span id="cb206-129"><a href="#cb206-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-130"><a href="#cb206-130" aria-hidden="true" tabindex="-1"></a>MSFT_MA<span class="ot">=</span><span class="fu">rollmean</span>(MSFT.ts,<span class="dv">10</span>)</span>
+<span id="cb206-131"><a href="#cb206-131" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(MSFT_MA,<span class="dv">5</span>)</span>
+<span id="cb206-132"><a href="#cb206-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-133"><a href="#cb206-133" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(MSFT.ts,<span class="at">main=</span><span class="st">"Original vs MA"</span>,<span class="at">ylab=</span><span class="st">"Ad.C.P."</span>,<span class="at">xlab=</span><span class="st">"Time"</span>,<span class="at">col =</span><span class="st">"red"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb206-134"><a href="#cb206-134" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(MSFT_MA,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb206-135"><a href="#cb206-135" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topleft"</span>,<span class="at">legend=</span><span class="fu">c</span>(<span class="st">"Original"</span>,<span class="st">"MA"</span>),<span class="at">col=</span><span class="fu">c</span>(<span class="st">"red"</span>,<span class="st">"blue"</span>),<span class="at">lty=</span><span class="dv">1</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb206-136"><a href="#cb206-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-137"><a href="#cb206-137" aria-hidden="true" tabindex="-1"></a>dec<span class="ot">=</span><span class="fu">decompose</span>(MSFT.ts,<span class="at">type=</span><span class="st">"additive"</span>)</span>
+<span id="cb206-138"><a href="#cb206-138" aria-hidden="true" tabindex="-1"></a>dec</span>
+<span id="cb206-139"><a href="#cb206-139" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(dec)</span>
+<span id="cb206-140"><a href="#cb206-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-141"><a href="#cb206-141" aria-hidden="true" tabindex="-1"></a>ad_dec<span class="ot">=</span>MSFT.ts<span class="sc">-</span>dec<span class="sc">$</span>seasonal</span>
+<span id="cb206-142"><a href="#cb206-142" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(MSFT.ts,<span class="at">main=</span><span class="st">"Original vs Ad.S"</span>,<span class="at">ylab=</span><span class="st">"Price"</span>,<span class="at">xlab=</span><span class="st">"Time"</span>,<span class="at">col=</span><span class="st">"red"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb206-143"><a href="#cb206-143" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(ad_dec,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb206-144"><a href="#cb206-144" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topleft"</span>,<span class="at">legend=</span><span class="fu">c</span>(<span class="st">"Original"</span>,<span class="st">"Adjusted"</span>),<span class="at">col=</span><span class="fu">c</span>(<span class="st">"red"</span>,<span class="st">"blue"</span>),<span class="at">lty=</span><span class="dv">1</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb206-145"><a href="#cb206-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-146"><a href="#cb206-146" aria-hidden="true" tabindex="-1"></a>HW<span class="ot">=</span><span class="fu">HoltWinters</span>(MSFT.ts,<span class="at">seasonal=</span><span class="st">"additive"</span>)</span>
+<span id="cb206-147"><a href="#cb206-147" aria-hidden="true" tabindex="-1"></a>HW</span>
+<span id="cb206-148"><a href="#cb206-148" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(HW,<span class="at">main=</span><span class="st">"HoltWinters"</span>)</span>
+<span id="cb206-149"><a href="#cb206-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-150"><a href="#cb206-150" aria-hidden="true" tabindex="-1"></a>prediction<span class="ot">=</span><span class="fu">predict</span>(HW,<span class="at">n.ahead=</span><span class="dv">10</span>,<span class="at">prediction.interval=</span>T,<span class="at">level=</span><span class="fl">0.95</span>)</span>
+<span id="cb206-151"><a href="#cb206-151" aria-hidden="true" tabindex="-1"></a>prediction</span>
+<span id="cb206-152"><a href="#cb206-152" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(prediction,<span class="at">main=</span><span class="st">"MSFT prediction using HoltWinters"</span>)</span>
+<span id="cb206-153"><a href="#cb206-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-154"><a href="#cb206-154" aria-hidden="true" tabindex="-1"></a>forecast<span class="ot">=</span><span class="fu">forecast</span>(HW,<span class="at">h=</span><span class="dv">10</span>,<span class="at">level=</span><span class="fu">c</span>(<span class="fl">0.80</span>,<span class="fl">0.95</span>))</span>
+<span id="cb206-155"><a href="#cb206-155" aria-hidden="true" tabindex="-1"></a>forecast</span>
+<span id="cb206-156"><a href="#cb206-156" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(forecast,<span class="at">main=</span><span class="st">"MSFT forecast using HoltWinters"</span>)</span>
+<span id="cb206-157"><a href="#cb206-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-158"><a href="#cb206-158" aria-hidden="true" tabindex="-1"></a>residuals<span class="ot">=</span>forecast<span class="sc">$</span>residuals</span>
+<span id="cb206-159"><a href="#cb206-159" aria-hidden="true" tabindex="-1"></a>residuals</span>
+<span id="cb206-160"><a href="#cb206-160" aria-hidden="true" tabindex="-1"></a>residuals<span class="ot">=</span><span class="fu">na.omit</span>(residuals)</span>
+<span id="cb206-161"><a href="#cb206-161" aria-hidden="true" tabindex="-1"></a>residuals</span>
+<span id="cb206-162"><a href="#cb206-162" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(residuals,<span class="at">main=</span><span class="st">"Residuals"</span>,<span class="at">ylab=</span><span class="st">"Residuals"</span>,<span class="at">xlab=</span><span class="st">"Time"</span>)</span>
+<span id="cb206-163"><a href="#cb206-163" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb206-164"><a href="#cb206-164" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-165"><a href="#cb206-165" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb206-166"><a href="#cb206-166" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(residuals)</span>
+<span id="cb206-167"><a href="#cb206-167" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(residuals)</span>
+<span id="cb206-168"><a href="#cb206-168" aria-hidden="true" tabindex="-1"></a><span class="fu">Box.test</span>(residuals,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span>
+<span id="cb206-169"><a href="#cb206-169" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(residuals)</span>
+<span id="cb206-170"><a href="#cb206-170" aria-hidden="true" tabindex="-1"></a><span class="fu">jarque.bera.test</span>(residuals)</span>
+<span id="cb206-171"><a href="#cb206-171" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(residuals,<span class="st">"pnorm"</span>,<span class="at">mean=</span><span class="fu">mean</span>(residuals),<span class="at">sd=</span><span class="fu">sd</span>(residuals))</span>
+<span id="cb206-172"><a href="#cb206-172" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb206-173"><a href="#cb206-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-174"><a href="#cb206-174" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-175"><a href="#cb206-175" aria-hidden="true" tabindex="-1"></a><span class="fu">## Answers for exercise 2</span></span>
+<span id="cb206-176"><a href="#cb206-176" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>ACF &amp; PACF Plot:  </span>
+<span id="cb206-177"><a href="#cb206-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-178"><a href="#cb206-178" aria-hidden="true" tabindex="-1"></a>The residuals show no significant autocorrelation, as almost all lags fall within the significance bounds</span>
+<span id="cb206-179"><a href="#cb206-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-180"><a href="#cb206-180" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Ljung-Box Test:  </span>
+<span id="cb206-181"><a href="#cb206-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-182"><a href="#cb206-182" aria-hidden="true" tabindex="-1"></a>With a p-value of 0.1236 (&gt; 0.05), we fail to reject the null hypothesis of no autocorrelation (white noise).  </span>
+<span id="cb206-183"><a href="#cb206-183" aria-hidden="true" tabindex="-1"></a>The residuals are not perfectly normal (Shapiro test  # jurqe bera &lt; 0.05)</span>
+<span id="cb206-184"><a href="#cb206-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-185"><a href="#cb206-185" aria-hidden="true" tabindex="-1"></a><span class="fu"># Exercise 3</span></span>
+<span id="cb206-186"><a href="#cb206-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-187"><a href="#cb206-187" aria-hidden="true" tabindex="-1"></a><span class="in">```{r exercise-3}</span></span>
+<span id="cb206-188"><a href="#cb206-188" aria-hidden="true" tabindex="-1"></a>data<span class="ot">=</span><span class="fu">read_excel</span>(<span class="st">"c7ex5.xls"</span>)</span>
+<span id="cb206-189"><a href="#cb206-189" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data,<span class="dv">5</span>)</span>
+<span id="cb206-190"><a href="#cb206-190" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-191"><a href="#cb206-191" aria-hidden="true" tabindex="-1"></a>ser1<span class="ot">=</span>data<span class="sc">$</span>X1</span>
+<span id="cb206-192"><a href="#cb206-192" aria-hidden="true" tabindex="-1"></a>ser1.ts<span class="ot">=</span><span class="fu">ts</span>(ser1,<span class="at">start=</span><span class="dv">1</span>,<span class="at">frequency=</span><span class="dv">1</span>)</span>
+<span id="cb206-193"><a href="#cb206-193" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ser1,<span class="dv">5</span>)</span>
+<span id="cb206-194"><a href="#cb206-194" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-195"><a href="#cb206-195" aria-hidden="true" tabindex="-1"></a>ser2<span class="ot">=</span>data<span class="sc">$</span>X2</span>
+<span id="cb206-196"><a href="#cb206-196" aria-hidden="true" tabindex="-1"></a>ser2.ts<span class="ot">=</span><span class="fu">ts</span>(ser2,<span class="at">start=</span><span class="dv">1</span>,<span class="at">frequency=</span><span class="dv">1</span>)</span>
+<span id="cb206-197"><a href="#cb206-197" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ser2,<span class="dv">5</span>)</span>
+<span id="cb206-198"><a href="#cb206-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-199"><a href="#cb206-199" aria-hidden="true" tabindex="-1"></a>ser3<span class="ot">=</span>data<span class="sc">$</span>X3</span>
+<span id="cb206-200"><a href="#cb206-200" aria-hidden="true" tabindex="-1"></a>ser3.ts<span class="ot">=</span><span class="fu">ts</span>(ser3,<span class="at">start=</span><span class="dv">1</span>,<span class="at">frequency=</span><span class="dv">1</span>)</span>
+<span id="cb206-201"><a href="#cb206-201" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ser3,<span class="dv">5</span>)</span>
+<span id="cb206-202"><a href="#cb206-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-203"><a href="#cb206-203" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>))</span>
+<span id="cb206-204"><a href="#cb206-204" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ser1.ts,<span class="at">main=</span><span class="st">"ser1"</span>,<span class="at">ylab=</span><span class="st">"value"</span>,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb206-205"><a href="#cb206-205" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ser2.ts,<span class="at">main=</span><span class="st">"ser2"</span>,<span class="at">ylab=</span><span class="st">"value"</span>,<span class="at">col=</span><span class="st">"red"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb206-206"><a href="#cb206-206" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ser3.ts,<span class="at">main=</span><span class="st">"ser3"</span>,<span class="at">ylab=</span><span class="st">"value"</span>,<span class="at">col=</span><span class="st">"green"</span>,<span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb206-207"><a href="#cb206-207" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-208"><a href="#cb206-208" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ser1.ts)</span>
+<span id="cb206-209"><a href="#cb206-209" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ser2.ts)</span>
+<span id="cb206-210"><a href="#cb206-210" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ser3.ts)</span>
+<span id="cb206-211"><a href="#cb206-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-212"><a href="#cb206-212" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb206-213"><a href="#cb206-213" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(ser1.ts,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-214"><a href="#cb206-214" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(ser1.ts,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-215"><a href="#cb206-215" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(ser1.ts)</span>
+<span id="cb206-216"><a href="#cb206-216" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(ser1.ts)</span>
+<span id="cb206-217"><a href="#cb206-217" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(ser1.ts)</span>
+<span id="cb206-218"><a href="#cb206-218" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-219"><a href="#cb206-219" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb206-220"><a href="#cb206-220" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(ser2.ts,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-221"><a href="#cb206-221" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(ser2.ts,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-222"><a href="#cb206-222" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(ser2.ts)</span>
+<span id="cb206-223"><a href="#cb206-223" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(ser2.ts)</span>
+<span id="cb206-224"><a href="#cb206-224" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(ser2.ts)</span>
+<span id="cb206-225"><a href="#cb206-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-226"><a href="#cb206-226" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb206-227"><a href="#cb206-227" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(ser3,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-228"><a href="#cb206-228" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(ser3,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-229"><a href="#cb206-229" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(ser3.ts)</span>
+<span id="cb206-230"><a href="#cb206-230" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(ser3.ts)</span>
+<span id="cb206-231"><a href="#cb206-231" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(ser3.ts)</span>
+<span id="cb206-232"><a href="#cb206-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-233"><a href="#cb206-233" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb206-234"><a href="#cb206-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-235"><a href="#cb206-235" aria-hidden="true" tabindex="-1"></a>All 3 series are non-stationary and correlation:  </span>
+<span id="cb206-236"><a href="#cb206-236" aria-hidden="true" tabindex="-1"></a>  ACF stays positive &amp; pacf has a few significant spekes adf &amp; pp p-value &gt; 0.05 - kpss p-value &lt; 0.05</span>
+<span id="cb206-237"><a href="#cb206-237" aria-hidden="true" tabindex="-1"></a>we should keep going with return and difference</span>
+<span id="cb206-238"><a href="#cb206-238" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-241"><a href="#cb206-241" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb206-242"><a href="#cb206-242" aria-hidden="true" tabindex="-1"></a>return1<span class="ot">=</span><span class="fu">diff</span>(ser1.ts)</span>
+<span id="cb206-243"><a href="#cb206-243" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return1,<span class="dv">5</span>)</span>
+<span id="cb206-244"><a href="#cb206-244" aria-hidden="true" tabindex="-1"></a>return2<span class="ot">=</span><span class="fu">diff</span>(ser2.ts)</span>
+<span id="cb206-245"><a href="#cb206-245" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return2,<span class="dv">5</span>)</span>
+<span id="cb206-246"><a href="#cb206-246" aria-hidden="true" tabindex="-1"></a>return3<span class="ot">=</span><span class="fu">diff</span>(ser3.ts)</span>
+<span id="cb206-247"><a href="#cb206-247" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(return3,<span class="dv">5</span>)</span>
+<span id="cb206-248"><a href="#cb206-248" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-249"><a href="#cb206-249" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(return1)</span>
+<span id="cb206-250"><a href="#cb206-250" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(return1)</span>
+<span id="cb206-251"><a href="#cb206-251" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(return1)</span>
+<span id="cb206-252"><a href="#cb206-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-253"><a href="#cb206-253" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(return2)</span>
+<span id="cb206-254"><a href="#cb206-254" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(return2)</span>
+<span id="cb206-255"><a href="#cb206-255" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(return2)</span>
+<span id="cb206-256"><a href="#cb206-256" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-257"><a href="#cb206-257" aria-hidden="true" tabindex="-1"></a><span class="fu">adf.test</span>(return3)</span>
+<span id="cb206-258"><a href="#cb206-258" aria-hidden="true" tabindex="-1"></a><span class="fu">pp.test</span>(return3)</span>
+<span id="cb206-259"><a href="#cb206-259" aria-hidden="true" tabindex="-1"></a><span class="fu">kpss.test</span>(return3)</span>
+<span id="cb206-260"><a href="#cb206-260" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-261"><a href="#cb206-261" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">2</span>))</span>
+<span id="cb206-262"><a href="#cb206-262" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(return1,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-263"><a href="#cb206-263" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(return1,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-264"><a href="#cb206-264" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(return2,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-265"><a href="#cb206-265" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(return2,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-266"><a href="#cb206-266" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(return3,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-267"><a href="#cb206-267" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(return3,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-268"><a href="#cb206-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-269"><a href="#cb206-269" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb206-270"><a href="#cb206-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-271"><a href="#cb206-271" aria-hidden="true" tabindex="-1"></a>Or we can do it:  </span>
+<span id="cb206-272"><a href="#cb206-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-275"><a href="#cb206-275" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb206-276"><a href="#cb206-276" aria-hidden="true" tabindex="-1"></a>returns_total<span class="ot">=</span><span class="fu">cbind</span>(return1,return2,return3)</span>
+<span id="cb206-277"><a href="#cb206-277" aria-hidden="true" tabindex="-1"></a><span class="fu">apply</span>(returns_total,<span class="dv">2</span>,Box.test,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span>
+<span id="cb206-278"><a href="#cb206-278" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-279"><a href="#cb206-279" aria-hidden="true" tabindex="-1"></a>model1<span class="ot">=</span><span class="fu">auto.arima</span>(return1)</span>
+<span id="cb206-280"><a href="#cb206-280" aria-hidden="true" tabindex="-1"></a>model1</span>
+<span id="cb206-281"><a href="#cb206-281" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-282"><a href="#cb206-282" aria-hidden="true" tabindex="-1"></a>model2<span class="ot">=</span><span class="fu">auto.arima</span>(return2)</span>
+<span id="cb206-283"><a href="#cb206-283" aria-hidden="true" tabindex="-1"></a>model2</span>
+<span id="cb206-284"><a href="#cb206-284" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-285"><a href="#cb206-285" aria-hidden="true" tabindex="-1"></a>model3<span class="ot">=</span><span class="fu">auto.arima</span>(return3)</span>
+<span id="cb206-286"><a href="#cb206-286" aria-hidden="true" tabindex="-1"></a>model3</span>
+<span id="cb206-287"><a href="#cb206-287" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-288"><a href="#cb206-288" aria-hidden="true" tabindex="-1"></a><span class="fu">tsdiag</span>(model1)</span>
+<span id="cb206-289"><a href="#cb206-289" aria-hidden="true" tabindex="-1"></a><span class="fu">checkresiduals</span>(model1)</span>
+<span id="cb206-290"><a href="#cb206-290" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-291"><a href="#cb206-291" aria-hidden="true" tabindex="-1"></a><span class="fu">tsdiag</span>(model2)</span>
+<span id="cb206-292"><a href="#cb206-292" aria-hidden="true" tabindex="-1"></a><span class="fu">checkresiduals</span>(model2)</span>
+<span id="cb206-293"><a href="#cb206-293" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-294"><a href="#cb206-294" aria-hidden="true" tabindex="-1"></a><span class="fu">tsdiag</span>(model3)</span>
+<span id="cb206-295"><a href="#cb206-295" aria-hidden="true" tabindex="-1"></a><span class="fu">checkresiduals</span>(model3)</span>
+<span id="cb206-296"><a href="#cb206-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-297"><a href="#cb206-297" aria-hidden="true" tabindex="-1"></a>res1<span class="ot">=</span><span class="fu">residuals</span>(model1)</span>
+<span id="cb206-298"><a href="#cb206-298" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(res1,<span class="dv">5</span>)</span>
+<span id="cb206-299"><a href="#cb206-299" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb206-300"><a href="#cb206-300" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(res1,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-301"><a href="#cb206-301" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(res1,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-302"><a href="#cb206-302" aria-hidden="true" tabindex="-1"></a><span class="fu">Box.test</span>(res1,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span>
+<span id="cb206-303"><a href="#cb206-303" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-304"><a href="#cb206-304" aria-hidden="true" tabindex="-1"></a>res2<span class="ot">=</span><span class="fu">residuals</span>(model2)</span>
+<span id="cb206-305"><a href="#cb206-305" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(res2,<span class="dv">5</span>)</span>
+<span id="cb206-306"><a href="#cb206-306" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb206-307"><a href="#cb206-307" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(res2,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-308"><a href="#cb206-308" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(res2,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-309"><a href="#cb206-309" aria-hidden="true" tabindex="-1"></a><span class="fu">Box.test</span>(res2,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span>
+<span id="cb206-310"><a href="#cb206-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-311"><a href="#cb206-311" aria-hidden="true" tabindex="-1"></a>res3<span class="ot">=</span><span class="fu">residuals</span>(model3)</span>
+<span id="cb206-312"><a href="#cb206-312" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(res3,<span class="dv">5</span>)</span>
+<span id="cb206-313"><a href="#cb206-313" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb206-314"><a href="#cb206-314" aria-hidden="true" tabindex="-1"></a><span class="fu">acf</span>(res3,<span class="at">lag.max=</span><span class="dv">40</span>,<span class="at">type=</span><span class="st">"correlation"</span>)</span>
+<span id="cb206-315"><a href="#cb206-315" aria-hidden="true" tabindex="-1"></a><span class="fu">pacf</span>(res3,<span class="at">lag.max=</span><span class="dv">40</span>)</span>
+<span id="cb206-316"><a href="#cb206-316" aria-hidden="true" tabindex="-1"></a><span class="fu">Box.test</span>(res3,<span class="at">lag=</span><span class="dv">20</span>,<span class="at">type=</span><span class="st">"Ljung-Box"</span>)</span>
+<span id="cb206-317"><a href="#cb206-317" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-318"><a href="#cb206-318" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(res1)</span>
+<span id="cb206-319"><a href="#cb206-319" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(res1, <span class="st">"pnorm"</span>, <span class="at">mean =</span> <span class="fu">mean</span>(res1), <span class="at">sd =</span> <span class="fu">sd</span>(res1))</span>
+<span id="cb206-320"><a href="#cb206-320" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-321"><a href="#cb206-321" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(res2)</span>
+<span id="cb206-322"><a href="#cb206-322" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(res2, <span class="st">"pnorm"</span>, <span class="at">mean =</span> <span class="fu">mean</span>(res2), <span class="at">sd =</span> <span class="fu">sd</span>(res2))</span>
+<span id="cb206-323"><a href="#cb206-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-324"><a href="#cb206-324" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(res3)</span>
+<span id="cb206-325"><a href="#cb206-325" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(res3, <span class="st">"pnorm"</span>, <span class="at">mean =</span> <span class="fu">mean</span>(res3), <span class="at">sd =</span> <span class="fu">sd</span>(res3))</span>
+<span id="cb206-326"><a href="#cb206-326" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb206-327"><a href="#cb206-327" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-328"><a href="#cb206-328" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-329"><a href="#cb206-329" aria-hidden="true" tabindex="-1"></a>All 3 series are stationary. Using <span class="in">`auto.arima`</span> on series:  </span>
+<span id="cb206-330"><a href="#cb206-330" aria-hidden="true" tabindex="-1"></a>  We obtain low-order ARIMA(p,1,q) models:  </span>
+<span id="cb206-331"><a href="#cb206-331" aria-hidden="true" tabindex="-1"></a>  ARIMA(0,1,2), ARIMA(1,1,1) and ARIMA(3,1,1) for the series  </span>
+<span id="cb206-332"><a href="#cb206-332" aria-hidden="true" tabindex="-1"></a>The ACF/PACF of the residuals show no significant autocorrelation.  </span>
+<span id="cb206-333"><a href="#cb206-333" aria-hidden="true" tabindex="-1"></a>The <span class="in">`Ljung–Box`</span> tests on residuals (lag 20) have large p-values (&gt; 0.5) (white noise).</span>
+<span id="cb206-334"><a href="#cb206-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-337"><a href="#cb206-337" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb206-338"><a href="#cb206-338" aria-hidden="true" tabindex="-1"></a>forecast1<span class="ot">=</span><span class="fu">forecast</span>(model1,<span class="at">h=</span><span class="dv">5</span>)</span>
+<span id="cb206-339"><a href="#cb206-339" aria-hidden="true" tabindex="-1"></a>forecast1</span>
+<span id="cb206-340"><a href="#cb206-340" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(forecast1,<span class="at">main=</span><span class="st">"Forecast for Series1"</span>)</span>
+<span id="cb206-341"><a href="#cb206-341" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-342"><a href="#cb206-342" aria-hidden="true" tabindex="-1"></a>forecast2<span class="ot">=</span><span class="fu">forecast</span>(model2,<span class="at">h=</span><span class="dv">5</span>)</span>
+<span id="cb206-343"><a href="#cb206-343" aria-hidden="true" tabindex="-1"></a>forecast2</span>
+<span id="cb206-344"><a href="#cb206-344" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(forecast2,<span class="at">main=</span><span class="st">"Forecast for Series2"</span>)</span>
+<span id="cb206-345"><a href="#cb206-345" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-346"><a href="#cb206-346" aria-hidden="true" tabindex="-1"></a>forecast3<span class="ot">=</span><span class="fu">forecast</span>(model3,<span class="at">h=</span><span class="dv">5</span>)</span>
+<span id="cb206-347"><a href="#cb206-347" aria-hidden="true" tabindex="-1"></a>forecast3</span>
+<span id="cb206-348"><a href="#cb206-348" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(forecast3,<span class="at">main=</span><span class="st">"Forecast for Series3"</span>)</span>
+<span id="cb206-349"><a href="#cb206-349" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-350"><a href="#cb206-350" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb206-351"><a href="#cb206-351" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-352"><a href="#cb206-352" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb206-353"><a href="#cb206-353" aria-hidden="true" tabindex="-1"></a>We then computed 5-step-ahead forecasts for each return series using a forecasting function obtaining point forecasts and 95% prediction intervals for the next 5 period.</span>
+</code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

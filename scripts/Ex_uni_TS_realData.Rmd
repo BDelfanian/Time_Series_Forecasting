@@ -1,0 +1,416 @@
+---
+title: "Univariate TS - real data"
+author: "Vasja Sivec"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+# Luxembourg Real GDP Analysis
+
+Previous examples used simulated data, which are well-behaved and simple to model. In this exercise, we will model the quarterly growth of real Gross Domestic Product (rGDP) for Luxembourg — an essential indicator of economic activity. This data presents a greater challenge due to factors like breaks, outliers, measurement errors and difficulty to detect the true model. Additionally, **this data is short which makes tests unreliable**. Nonetheless, those working for statistical offices or finance ministries are tasked with creating forecasts and budget projections utilizing this data.
+
+In April 2022, *Statec* just released the initial estimate of rGDP for 2021Q4 (note that rGDP estimates often undergo revisions). Your objective is to generate rGDP forecasts for 2022Q1 and 2022Q2.
+
+Tasks:    
+
+1. Import the Luxembourg rGDP series from an Excel file.
+2. Visualize the series and **conduct stationarity tests**.
+3. Determine the **suitable ARIMA(p,d,q) model** and assess its characteristics.
+4. **Forecast** quarterly rGDP for the next two periods.
+
+# Loading libraries and data
+Importing the data and creating a time series object.
+
+```{r}
+#| label: loading libraries and data
+
+library(readxl)
+library(ggplot2)
+library(stats)
+library(forecast)
+library(ggpubr)
+library(fpp3)
+library(aTSA)
+
+# Import data
+df <- read_excel('../data/rgdp_2021q4.xlsx')
+
+# Convert it into TS object
+y <- ts(df[,"PIB_R_SA"], start=c(sub("*Q.","",df[1,"date"]),sub(".*Q","",df[1,"date"])), frequency=4)
+head(y, 12)
+```
+# Stationary analysis
+## ACF and PACF plots
+ACF: Autocorrelation Function
+PACF: Partial Autocorrelation Function
+
+```{r}
+#| label: series visualization
+
+plot_y  <- ggplot(data.frame(x = time(y), y = as.numeric(y)), aes(x = x, y = y)) + 
+  geom_line() + 
+  labs(title = "rGDP")
+
+plot_ac  <- ggAcf(y,lag.max = 10) + labs(title="ACF")
+
+plot_pac <- ggPacf(y, lag.max = 10) + labs(title="PACF")
+
+# Display plot
+ggarrange(plot_y, plot_ac, plot_pac, ncol = 3)
+```
+
+**Question:** Is it stationary or not? why? 
+
+## Stationary tests
+### Augmented Dickey–Fuller (ADF) Test
+
+The **Augmented Dickey–Fuller (ADF) test** (Dickey and Fuller, 1979; Said and Dickey, 1984) is the most commonly used unit root test.
+
+#### Hypotheses
+- **Null hypothesis ($H_0$)**: The series has a unit root → **non-stationary**  
+- **Alternative hypothesis ($H_1$)**: The series is stationary (or trend-stationary)
+
+#### Test Equation Variants
+1. No constant, no trend  
+2. With constant (most common)  
+   $$\Delta y_t = \alpha + (\rho-1)y_{t-1} + \sum_{i=1}^p \gamma_i \Delta y_{t-i} + \varepsilon_t$$
+3. With constant + linear trend
+
+#### Interpretation
+| ADF p-value       | Decision                          |
+|-------------------|-----------------------------------|
+| p ≤ 0.05          | Reject $H_0$ → Stationary         |
+| p > 0.05          | Fail to reject → Unit root likely |
+
+
+```{r}
+#| label: stationary tests - ADF
+
+# ADF test
+# H0: UR
+adf.test(y)
+print("We cannot reject H0, which says that the series is non-stationary, regardless of the type of the model.")
+```
+
+### KPSS test
+KPSS: Kwiatkowski–Phillips–Schmidt–Shin (null hypothesis -> stationary)
+
+The **KPSS test** (Kwiatkowski et al., 1992) tests for **stationarity** around a deterministic trend or level — the opposite hypothesis of ADF/PP tests.
+
+#### Hypotheses (reversed compared to ADF/PP!)
+- **Null hypothesis ($H_0$)**: The series is **stationary** (level or trend-stationary)  
+- **Alternative hypothesis ($H_1$)**: The series has a **unit root** (non-stationary)
+
+#### Test Types
+- `"mu"` → tests stationarity around a **constant** (level-stationary)  
+- `"tau"` → tests stationarity around a **linear trend** (trend-stationary)
+
+#### Decision Rule
+| KPSS p-value       | Conclusion                          |
+|--------------------|-------------------------------------|
+| p > 0.05           | Fail to reject $H_0$ → Stationary   |
+| p ≤ 0.05           | Reject $H_0$ → Non-stationary       |
+
+#### Recommended Joint Testing Strategy
+
+| ADF/PP Result       | KPSS Result         | Conclusion                          |
+|---------------------|---------------------|-------------------------------------|
+| Reject $H_0$ (stationary) | Fail to reject $H_0$ (stationary) | Strong evidence of stationarity     |
+| Fail to reject (unit root) | Reject $H_0$ (non-stationary)     | Strong evidence of unit root     |
+| Conflicting results |                                     | Inconclusive → try differencing or other tests |
+
+
+```{r}
+#| label: stationary tests - KPSS
+
+# KPSS test
+# H0: NO UR
+kpss.test(y) 
+print("We reject H0, which says that the series is stationary, regardless of the type of the model.")
+```
+
+### PP
+PP: Phillips–Perron\
+
+The **Phillips–Perron (PP) test** (Phillips and Perron, 1988) is a popular unit root test used to determine whether a time series is stationary or contains a unit root (i.e., is integrated of order 1, I(1)).
+
+#### Hypotheses
+- **Null hypothesis ($H_0$)**: The series has a unit root → *non-stationary*  
+- **Alternative hypothesis ($H_1$)**: The series is (trend-)stationary → no unit root
+
+#### Key Advantages over ADF
+| Feature                        | ADF Test                          | PP Test                                      |
+|-------------------------------|-----------------------------------|-----------------------------------------------|
+| Correction for serial correlation | Parametric (adds lagged Δy)      | Non-parametric (Newey–West HAC estimator)    |
+| Robustness to heteroskedasticity | No                                | Yes                                           |
+| Small-sample performance       | Generally better                  | Slightly lower power, but more robust         |
+
+#### Test Specifications (choose one)
+1. **No constant, no trend**  
+2. **With constant (drift)** → most common for economic series  
+3. **With constant + linear trend** → use when series shows clear trend
+
+#### Interpretation of Results
+- **p-value < 0.05** → Reject $H_0$ → series is stationary  
+- **p-value > 0.05** → Fail to reject $H_0$ → evidence of unit root (non-stationary)
+
+#### Practical Recommendation
+Run **both ADF and PP** tests. Conclusions are strongest when both tests agree.
+
+```{r}
+#| label: stationary tests - PP
+
+# Similar to Augmented DF test, performs worse than ADF in small samples
+# H0: UR
+pp.test(y) 
+print("We cannot reject H0, which says that the series is non-stationary, regardless of the type of the model.")
+```
+
+Comparing all tests:
+
+```{r}
+#| label: stationary tests - All
+
+print("ALL UR TESTS AT ONCE:")
+# All-in-1
+print("------------------------------------------------")
+stationary.test(y, method = c("adf", "pp", "kpss"))
+          
+```
+
+#### Difference analysis
+
+```{r}
+#| label: Difference & plot the data
+
+y_gr = diff(log(y))
+
+plot_y  <- ggplot(data.frame(x = time(y_gr), y = as.numeric(y_gr)), aes(x = x, y = y)) + 
+  geom_line() + 
+  labs(title = "rGDP GR")
+
+plot_ac  <- ggAcf(y_gr,lag.max = 10) + labs(title="ACF")
+plot_pac <- ggPacf(y_gr, lag.max = 10) + labs(title="PACF")
+
+# Display plot
+ggarrange(plot_y, plot_ac, plot_pac, ncol = 3)
+```
+
+          
+```{r}
+# ADF test on growth rates ("differenced data")
+# H0: UR
+adf.test(y_gr)
+print("We reject H0. Series is stationary.")
+```
+
+```{r}
+# KPSS test on the growth rates ("differenced data") 
+# H0: NO UR
+kpss.test(y_gr) 
+print("We cannot reject H0 for Type2&Type3 models. We should look at Type2 model results for this series. Series is stationary.")
+```
+
+```{r}
+# PP test on the growth rates ("differenced data") 
+# H0: UR
+pp.test(y_gr) 
+print("We reject H0, which claims that the series is non-stationary.")
+```
+
+```{r}
+# Differenced data is stationary. From now on we will use the differenced data. 
+# Select appropriate ARIMA model
+# 3.7 Select the model by using information criteria
+p_max = 5
+AIC  = vector(length=p_max, mode="numeric")
+AAIC = vector(length=p_max, mode="numeric")
+BIC  = vector(length=p_max, mode="numeric")
+for (p in 0:p_max) {
+  # estimate the model
+  mdlEst <- Arima(y_gr, order=c(p,0,0),include.constant=TRUE)
+  # store information criteria
+  AIC[p+1]  <- mdlEst$aic
+  AAIC[p+1] <- ifelse(!is.null(mdlEst$aaic), mdlEst$aaic, NA) 
+  BIC[p+1]  <- mdlEst$bic
+} 
+# AIC <- lapply(seq(0,p_max,1), \(p) {Arima(y, order=c(p,0,0))$aic})
+# AIC <- sapply(seq(0,p_max,1), \(p) {Arima(y, order=c(p,0,0))$aic})
+# rm(list = c("AIC", "AAIC", "BIC"))
+p_aic <- which.min(AIC) - 1 
+p_bic <- which.min(BIC) - 1 
+sprintf("Optimal lag according to AIC is %d",p_aic)
+sprintf("Optimal lag according to BIC is %d",p_bic)
+
+print("ICs suggest either AR(0) or AR(1).")
+print("Let us estimate AR(1) and inspect its properties.")
+```
+
+```{r}
+# 3.6 Estimate ARIMA(1,1,0) 
+# the case of missing an important regressor 
+# discuss the consequences
+mdlEst <- Arima(y,order=c(1,1,0),include.constant=TRUE) 
+summary(mdlEst)
+p_values = (1-pnorm(abs(mdlEst$coef)/sqrt(diag(mdlEst$var.coef))))*2 
+p_values = round(p_values,2)
+sprintf("P-values for the coefficients are: ")
+p_values
+checkresiduals(mdlEst,plot = TRUE, test = "LB")
+print("There appears to be no autocorrelation in the residuals since all the AC coefficients are within the blue confidence intervals.")
+``` 
+
+```{r}
+# Compare to auto arima
+auto.arima(y)
+sprintf("Notice that Autoarima selected a seasonal model! (we will have a look at these models later) ")
+sprintf("RGDP does not have a seasonal component (it is deseasonalized). Auto arima is very good, but it can make mistakes.")
+```
+
+```{r}
+# Compare to auto arima without the option of a seasonal model
+auto.arima(y,seasonal=FALSE)
+```
+
+```{r}
+# Next thing that you want to do is to check neighboring models
+# Increase AR order by 1
+mdlEst1 <- Arima(y,order=c(2,1,0),include.constant=TRUE) 
+summary(mdlEst1)
+p_values = (1-pnorm(abs(mdlEst1$coef)/sqrt(diag(mdlEst1$var.coef))))*2 
+p_values = round(p_values,2)
+sprintf("P-values for the coefficients are: ")
+p_values
+print("We will stick with the original model since the added coefficient is insignificant.")
+```
+
+```{r}
+# Add MA term
+mdlEst2 <- Arima(y,order=c(1,1,1),include.constant=TRUE) 
+summary(mdlEst2)
+summary(mdlEst2)
+p_values = (1-pnorm(abs(mdlEst2$coef)/sqrt(diag(mdlEst2$var.coef))))*2 
+p_values = round(p_values,2)
+sprintf("P-values for the coefficients are: ")
+p_values
+print("We will stick with the original model since the added coefficient is insignificant.")
+```
+
+```{r}
+# We decide to use our original model ARIMA(1,1,0)
+# Now forecast the future values of rGDP
+
+# 1-STEP AHEAD FORECAST
+mdlEst  <- Arima(y,order=c(1,1,0),include.constant=TRUE)
+fcs_1_st <- forecast::forecast(mdlEst, h=1)
+fcs_1_st$x <- tail(fcs_1_st$x,10)  # plot only the last 10 observations + the forecast
+plot(fcs_1_st)
+
+
+# MULTI-STEP AHEAD FORECAST
+fcs_multi_st <- forecast::forecast(mdlEst, h=10)
+fcs_multi_st$x <- tail(fcs_multi_st$x,10)
+# my_fcs$x <- my_fcs$x[(length(my_fcs$x)-10):length(my_fcs$x)]
+plot(fcs_multi_st)
+```
+
+
+```{r}
+# 1-STEP AHEAD FORECASTS WITH EXPANDING DATA WINDOW
+# PSEUDO FORECASTING EXERCISE: used to test and compare models
+# Start in Q4 2015 and forecast Q1 2016
+# start in Q1 2016 and forecast Q2 2016 
+# ...
+# start in Q3 2017 and forecast Q4 2021
+# (What is the difference between expanding/rolling window?) 
+
+i_start <- which(time(y)==2015.75)
+i_end   <- length(y)-1
+fcs <- numeric(0)
+for (i in i_start:i_end-1) {
+  mdlEst_i <- Arima(y[1:i],order=c(1,1,0),include.constant=TRUE)
+  fcs_i    <- forecast::forecast(mdlEst_i, h=1)
+  fcs <- c(fcs, fcs_i$mean)
+  }
+
+# PERFORM ALSO THE MULTI-STEP AHEAD FORECAST IN 2015Q4 
+y_sub <- window(y, , end=c(2015.75, 1))
+mdlEst <- Arima(y_sub,order=c(1,1,0),include.constant=TRUE)
+fcs_multi <- forecast::forecast(mdlEst, h=i_end-i_start+1)
+
+# Plot ALL
+fcs_multi$x <- tail(fcs_multi$x,30)
+plot(fcs_multi)
+lines(seq(2016,2021.75,.25), fcs, col='green', lwd=2)
+lines(seq(2016,2021.75,.25), y[(i_start+1):(i_end+1)], col='black', lwd=2)
+legend(2009,17000, legend=c("TRUE", "1-STEP-AHEAD FCS","MULIT-STEP-AHEAD FCS"),
+       col=c("black", "green","blue"), lty=rep(1,3), cex=0.8)
+```
+
+```{r}
+# This one was LUX rGDP. The forecast was rather nice (by luck!). 
+# Typically multi-step ahead forecasts do not perform well. Why? 
+# Let us forecast US inflation index
+df <- read_excel('../data/US_cpi.xlsx')
+
+# Change it into TS object
+y <- ts(df[,"CPIAUCSL"],start=c(format(as.Date(df$date[1]),"%Y"),1),frequency=4)
+
+
+i_start <- which(time(y)==2015.0)
+i_end   <- length(y)-1
+fcs <- numeric(0)
+for (i in i_start:i_end-1) {
+  mdlEst_i <- Arima(y[1:i],order=c(1,1,0),include.constant=TRUE)
+  fcs_i    <- forecast::forecast(mdlEst_i, h=1)
+  fcs <- c(fcs, fcs_i$mean)
+  }
+
+# Multi step ahead forecast 
+y_sub <- window(y, , end=c(2015.0, 1))
+mdlEst <- Arima(y_sub,order=c(1,1,0),include.constant=TRUE)
+fcs_multi <- forecast::forecast(mdlEst, h=i_end-i_start+1)
+
+# Plot ALL
+fcs_multi$x <- tail(fcs_multi$x,30)
+plot(fcs_multi,ylim = c(min(fcs_multi$x), max(y)))
+lines(seq(2015.25,2023.25,1/4), fcs, col='green', lwd=2)
+lines(seq(2015.25,2023.25,1/4), y[(i_start+1):(i_end+1)], col='black', lwd=2)
+legend(x = "topleft", legend=c("true", "1-step","multi-step"),
+       col=c("black", "green","blue"), lty=rep(1,3), cex=0.5)
+
+# Can you explain why the multi-step ahead forecast performed poorly by observing the figure? There are two reasons.  
+```
+
+```{r}
+#work with growth rates
+y[,"CPIAUCSL"] <- c(NaN,100*diff(log(y)))
+
+fcs <- numeric(0)
+for (i in i_start:i_end-1) {
+  mdlEst_i <- Arima(y[50:i],order=c(1,0,0),include.constant=TRUE)
+  fcs_i    <- forecast::forecast(mdlEst_i, h=1)
+  fcs <- c(fcs, fcs_i$mean)
+  }
+
+# Multi step ahead forecast 
+y_sub <- window(y,start = c(1959.0,2), end=c(2015.0, 1))
+mdlEst <- Arima(y_sub,order=c(1,0,0),include.constant=TRUE)
+fcs_multi <- forecast::forecast(mdlEst, h=i_end-i_start+1)
+
+# Plot ALL
+fcs_multi$x <- tail(fcs_multi$x,30)
+plot(fcs_multi,ylim = c(min(fcs_multi$x), max(y[2:length(y)])))
+lines(seq(2015.25,2023.25,1/4), fcs, col='green', lwd=2)
+lines(seq(2015.25,2023.25,1/4), y[(i_start+1):(i_end+1)], col='black', lwd=2)
+legend(x = "topleft", legend=c("true", "1-step","multi-step"),
+       col=c("black", "green","blue"), lty=rep(1,3), cex=0.5)
+
+
+
+```

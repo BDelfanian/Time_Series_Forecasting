@@ -1,0 +1,381 @@
+---
+title: "Multivariate Series - Real Data"
+output: html_notebook
+author: Vasja Sivec
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+# Estimate multivariate time series models on real world data
+
+We will use a VAR model to predict the value of Luxembourg stock market index (LUXX). 'DAX_CAC_BEL_LUXX.xlsx' contains daily data for DAX (Frankfurt stock exchange, 40 blue chip companies), CAC (Paris stock exchange, 40), BEL (Brussels stock exchange, 20) and LUXX (Luxembourg stock exchange, 9 assets) stock market indexes. Sample runs from 1990Jan-2022June, with missing values. We will simplify our task by estimating a VAR(2). That is, from the 3 potential exogenous predictors (DAX, CAC, BEL) we will select one to be included next to LUXX. This is a very tricky example. Luxx stock index is peculiar. It does not seem to be trending, like other stock indices and is very iliquid. 
+
+Note: we neglect treatment of outliers, holiday day effects,...
+
+Ex. 1 1. Import data and plot them.\
+2. Perform stationarity tests and decide if data should be differenced or in levels. 3. Calculate correlations between LUXX and the remaining 3 stock indices. Which of the series is the most promising? 4. Estimate a VAR on the two selected series. Estimation sample: up to 2021, forecast sample: Jan-June. 5. Perform a rolling 1-step ahead forecast and plot. 6. Perform cointegration tests. If cointegration is detected, estimate the model in levels and perform the same forecasts. [SKIP]
+
+From here on, you are required to complete parts of the code yourself (see items marked with [XXXXXXXXXXXXXX]).
+
+```{r}
+# Ex 1 Import data and plot them
+# Load required packages
+library(openxlsx)
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+
+# Set working directory to the file's location
+setwd("C:/Users/xct385/Desktop/DS ws/MADS_win25/Exercises/2_Ex_MULTI_TS/Ex_models_R")
+
+# Import Excel file data
+df <- read.xlsx("DAX_CAC_BEL_LUXX.xlsx", sheet = 1, startRow = 4)
+
+# Rename columns
+colnames(df) <- c("date", "dax", "bel", "luxx", "cac")
+
+# Convert date column to Date format
+df$date <- as.Date(df$date, origin = "1899-12-30")
+
+# Plot data
+par(mfrow=c(2,2))
+plot(df$date, df$luxx, type="l", main="luxx", xlab="Date",ylab="Value")
+plot(df$date, df$dax,  type="l", main="dax",  xlab="Date", ylab="Value")
+plot(df$date, df$cac,  type="l", main="cac",  xlab="Date", ylab="Value")
+plot(df$date, df$bel,  type="l", main="bel",  xlab="Date", ylab="Value")
+
+# Comment
+print("Comment: Do the series appear to be stationary? Can you detect any common patterns from the figure?")
+```
+
+```{r}
+# Ex 2 stationarity
+# Load required packages
+library(ggplot2)
+library(stats)
+library(forecast)
+
+# Create a function that plot ACF and PACF for a single series
+plot_ac_pac <- function(df, series_name) {
+plot_y  <- ggplot(data.frame(x=df$date, y=as.numeric(df[[series_name]])), aes(x = x, y = y))+ 
+  geom_line() + 
+  labs(title = toupper(series_name))
+  plot_ac  <- ggAcf(df[[series_name]],lag.max = 10) + labs(title="ACF")
+  plot_pac <- ggPacf(df[[series_name]], lag.max = 10) + labs(title="PACF")
+  # Display plot
+  ggarrange(plot_y,plot_ac,plot_pac,nrow = 3,ncol = 1)
+}
+
+# Plot AC and PAC functions - for individual stock index 
+plot_ac_pac(df,"luxx")
+plot_ac_pac(df,"cac")
+plot_ac_pac(df,"bel")
+plot_ac_pac(df,"dax")
+```
+
+```{r}
+# Ex 2 stationarity
+# Load required packages
+library(tseries)
+
+# Create a dataframe for storing p-values
+ur_probs <- data.frame(adf = rep(0, 4), kpss = rep(0, 4))
+row.names(ur_probs) <- c('dax', 'bel', 'luxx', 'cac')
+
+# Perform stationarity tests and store p-values in the dataframe
+for (i in 2:ncol(df)) {  # Start from column 2 (excluding the date column)
+
+  # ADF TEST
+  adf_result <- aTSA::adf.test(na.omit(df[, i]), nlag = NULL, output = FALSE)   # tseries package - model with constant&trend 
+  ur_probs[i - 1, "adf"] <-last(adf_result$type2[,3])  # type2 - test with drift only (inspect other models as well!)
+  # in principle you should select the lag length based on model's statistical adequacy (wn errors, significance of the coefficients, etc.)
+  # in practice we often rely on the default lag length (=floor(4*(length(x)/100)^(2/9))), whose results are stored as the last element
+  #  adf_result <- aTSA::adf.test(df[,i],NULL, TRUE)   #  aTSA package - all 3 types
+  
+  # KPSS Test (H0: Series is stationary around a constant)
+  kpss_result <- aTSA::kpss.test(na.omit(df[, i]), lag.short = TRUE, output = FALSE)
+  ur_probs[i - 1, "kpss"] <- kpss_result[2,3]
+  # when in doubt which package was used: find("kpss.test")
+
+}
+
+# Print the table with p-values for ADF and KPSS tests
+print("Table with p-values for ADF (H0: series is UR) and KPSS (H0: series is stat)")
+print(ur_probs)
+print("Which of the series in our dataset are stationary, and which are not?")
+```
+
+```{r}
+# Dax, Bel, and Cac are non-stationary, while results for Luxx are unclear. We err on the side of caution and assume it is non-stationary. Difference the series and check for stationarity of differenced series. 
+
+# Difference the series
+df_diff <- 100*(df[-1, -1] / df[-nrow(df),-1] - 1)
+df_diff <- cbind(df$date[-1],df_diff)
+colnames(df_diff) <- colnames(df)
+
+# PLOT SERIES
+plot_ac_pac(df_diff,"luxx")
+plot_ac_pac(df_diff,"cac")
+plot_ac_pac(df_diff,"bel")
+plot_ac_pac(df_diff,"dax")
+print("Comment on the figures. Do indexes look stationary? Can you detect common patterns by eyeballing the figures?")
+
+```
+
+```{r}
+# Create a dataframe for storing p-values
+ur_probs <- data.frame(adf = rep(0, 4), kpss = rep(0, 4))
+row.names(ur_probs) <- c('dax', 'bel', 'luxx', 'cac')
+
+for (i in 2:ncol(df_diff)) {  # Start from column 2 (excluding the date column)
+
+  # ADF TEST
+  adf_result <- aTSA::adf.test(na.omit(df_diff[, i]), nlag = NULL, output = FALSE)   # tseries package - model with constant&trend 
+  ur_probs[i - 1, "adf"] <-last(adf_result$type2[,3])  # type2 - test with drift only (inspect other models as well!)
+  # in principle you should select the lag length based on model's statistical adequacy (wn errors, significance of the coefficients, etc.)
+  # in practice we often rely on the default lag length (=floor(4*(length(x)/100)^(2/9))), whose results are stored as the last element
+  #  adf_result <- aTSA::adf.test(df[,i],NULL, TRUE)   #  aTSA package - all 3 types
+  
+  # KPSS Test (H0: Series is stationary around a constant)
+  kpss_result <- aTSA::kpss.test(na.omit(df_diff[, i]), lag.short = TRUE, output = FALSE)
+  ur_probs[i - 1, "kpss"] <- kpss_result[2,3]
+  # when in doubt which package was used: find("kpss.test")
+
+}
+
+# Print the table with p-values for ADF and KPSS tests
+print("Table with p-values for ADF (H0: series is UR) and KPSS (H0: series is stat)")
+print(ur_probs)
+print("Which of the series in our dataset are stationary, and which are not?")
+```
+
+```{r}
+# Ex 3 Estimate correlation between Luxx and the remaining indices
+print(cor(na.omit(df_diff[,-1])))
+print("Correlation between Luxx and Dax is very high.")
+
+# The fact that dax/dax has the highest correlation with Luxx does not automatically imply that it will be the most helpful predictor,  although it is very likely. 
+# Why? In a VAR variables own lags are as well used as predictors. 
+# Explore as well the partial correlation coefficients...  
+
+```
+
+```{r}
+library(ppcor)
+# Add lag of Luxx to the data and check if partial correlation coefficients are equaly high
+df_diff$Lluxx <- lag(df_diff$luxx)
+df_diff<-na.omit(df_diff)
+pcor(cbind(df_diff$luxx,df_diff$cac,df_diff$Lluxx))
+pcor(cbind(df_diff$luxx,df_diff$dax,df_diff$Lluxx))
+pcor(cbind(df_diff$luxx,df_diff$bel,df_diff$Lluxx))
+
+# Next check if one of the stock indexes "leads" LUXX stock index
+```
+
+```{r}
+# Add lag of dax/cac/bel to the data and check correlation coefficients
+df_diff$Ldax <- lag(df_diff$dax)
+df_diff$Lcac <- lag(df_diff$cac)
+df_diff$Lbel <- lag(df_diff$bel)
+df_diff<-na.omit(df_diff)
+
+# correlation of Luxx with lagged indexes 
+cor(df_diff[,-1])
+
+# partial correlation of Luxx with lagged CAC once we control for the lag of Luxx itself 
+pcor(cbind(df_diff$luxx,df_diff$Lcac,df_diff$Lluxx))
+
+# Once we control for the information contained in the lags of Luxx, the lag of Cac remains the variable best correlated with Luxx, although there is virtually almost no difference between Cac and Dax. What is the economic rationale behind this?
+```
+
+```{r}
+# Perform Granger causality tests
+library(lmtest)
+
+# grangertest luxx  for cac
+[XXXXXXXXXXXXXX]
+# grangertest cac for luxx
+[XXXXXXXXXXXXXX]
+
+# We see that Cac granger-causes Lux. It is unclear if Luxx  granger-causes Cac. 
+```
+
+```{r}
+# Estimate a VAR model
+# Use first IC to select the number of lags
+library(vars)
+ics <- [XXXXXXXXXXXXXX]
+print(ics$selection)          
+
+# information criteria point to differents options: from 1-2 lags. 
+```
+
+```{r}
+# Since the purpose here is forecasting, let us evaluate the models with different lags based on pseudo-out-of-sample forecasts.
+# Let us use 90% of the sample to estimate the model parameters and 1-step ahead forecasts.
+
+# Save 10% of the sample to test the forecasts
+df_var  <- subset(df_diff, select = c("date","luxx","cac"))
+n_fcs <- round(0.1 * nrow(df_var))
+fcs <- matrix(nrow = n_fcs, ncol = 2)
+
+# Declare evaluation measures matrices
+rmse <- matrix(nrow = 2, ncol = 2)
+mae <- matrix(nrow = 2, ncol = 2)
+rmspe <- matrix(nrow = 2, ncol = 2)
+
+for (p in 1:2) {  # loop over models: p = [1, 2]
+
+    estMdl <- VAR(df_var[     [XXXXXXXXXXXXXX]          ], p = p, type="const")  # fit VAR(p). Model is estimated only once to speed up 
+
+  for (i in 1:n_fcs) {  # loop for 1-step-ahead forecasts on the last 10% of the data
+    
+    # Predict
+    estMdl$y <-df_var[1:(nrow(df_var) - (n_fcs-i)-1),-1]
+    fcs_i  <- predict(estMdl,df_var[1:(nrow(df_var) - (n_fcs-i)-1),],n.ahead=1)
+    fcs[i, 1] <- fcs_i$fcst$luxx[1]  # store the forecast
+    fcs[i, 2] <- fcs_i$fcst$cac[1]  # store the forecast
+    }
+
+  # Calculate rmse, rmspe, mae
+  actual <- df_var[(nrow(df_diff)-n_fcs+1):nrow(df_diff),-1]
+  errors <- actual - fcs
+  rmse[p, 1:2] <- sqrt(colMeans(errors^2))
+  mae[p, 1:2] <- colMeans(abs(errors))
+  rmspe[p, 1:2] <- sqrt(colMeans((errors)/actual)^2)
+}
+
+cat("RMSE\n")
+colnames(rmse) <- c('Luxx', 'Cac')
+rownames(rmse) <- c('p=1', 'p=2')
+print(rmse)
+cat("MAE\n")
+colnames(mae) <- c('Luxx', 'Cac')
+rownames(mae) <- c('p=1', 'p=2')
+print(mae)
+cat("RMSPE\n")
+colnames(rmspe) <- c('Luxx', 'Cac')
+rownames(rmspe) <- c('p=1', 'p=2')
+print(rmspe)
+print("Which model would you choose?")
+```
+
+```{r}
+# Ex 5: Perform expanding-window one-step-ahead forecast 
+for (i in 1:n_fcs) {  # loop for 1-step-ahead forecasts on the last 10% of the data
+    
+  # Predict
+  estMdl <- VAR(df_var[1:(nrow(df_var) - (n_fcs-i)-1),-1], p = 1, type="const")  # fit VAR(1). Model is re-estimated for each forecast period
+  fcs_i  <- predict(estMdl,df_var[1:(nrow(df_var) - (n_fcs-i)-1),], ci = 0.9,n.ahead=1)
+  if (i==1) {
+  fcs <- fcs_i  # store the 1-step-ahead forecast for period i
+  } else {
+  fcs$fcst$luxx <- rbind(fcs$fcst$luxx,fcs_i$fcst[[1]]) # attach the new 1-step ahead forecast 
+  fcs$fcst$cac  <- rbind(fcs$fcst$cac,fcs_i$fcst[[2]]) # attach the new 1-step ahead forecast 
+  }
+}
+
+# PLot
+plot(fcs)
+
+# Plot together with actual
+true           <- df_var[,1:2]
+fcs_plt        <- df_var[,1:2]
+fcs_plt        <- cbind(fcs_plt,fcs=NA,lower=NA,upper=NA)
+fcs_plt[(nrow(fcs_plt) - n_fcs +1):nrow(fcs_plt),3] <- fcs$fcst$luxx[,1]
+fcs_plt[(nrow(fcs_plt) - n_fcs +1):nrow(fcs_plt),4] <- fcs$fcst$luxx[,2]
+fcs_plt[(nrow(fcs_plt) - n_fcs +1):nrow(fcs_plt),5] <- fcs$fcst$luxx[,3]
+
+plot(fcs_plt$date[150:nrow(fcs_plt)], fcs_plt$luxx[150:nrow(fcs_plt)], col="blue", type="l", lty=1)
+lines(fcs_plt$date[150:nrow(fcs_plt)], fcs_plt$upper[150:nrow(fcs_plt)], col="dark red", lty=2)
+lines(fcs_plt$date[150:nrow(fcs_plt)], fcs_plt$lower[150:nrow(fcs_plt)], col="dark red", lty=2)
+lines(fcs_plt$date[150:nrow(fcs_plt)], fcs_plt$lower[150:nrow(fcs_plt)], col="dark red", lty=2)
+points(fcs_plt$date[150:nrow(fcs_plt)], fcs_plt$fcs[150:nrow(fcs_plt)], col="red", pch="*")
+lines(fcs_plt$date[150:nrow(fcs_plt)], fcs_plt$fcs[150:nrow(fcs_plt)], col="red",lty=2)
+print("Are the forecasts precise? Not really, but predicting stock markets is notoriously difficult")
+```
+```{r}
+# In R you can also easily produce a nice "fan-chart" for the multi-step ahead forecast
+fcs_multi  <- predict(estMdl,df_var[1:(nrow(df_var) - (n_fcs-i)-1),],n.ahead=10)
+fcs_multi$endog <- tail(fcs_multi$endog,30)
+fanchart(fcs_multi)  
+```
+
+
+```{r}
+# Let us also have a closer look at the last estimated model
+summary(estMdl)
+# We see that none of the coefficients in the CAC equation are significant. If we care about CAC forecasts we could estimate increase the lag to 2. 
+estMdl <- VAR(df_var[,2:3], p = 2, type="const")
+
+# A bit nicer way of displaying the results
+library(stargazer)
+stargazer(estMdl$varresult,type="text",style="aer",title="VAR(2)",column.labels =c("luxx","cac"))
+```
+
+```{r}
+# Let us check stability of the VAR model
+# 1. We check if the coefficients in the var are stable over time
+stability <- stability(estMdl)
+par(mfrow=c(1,2))
+plot(stability$stability$luxx)
+plot(stability$stability$cac)
+# If the plotted cumsum statistic goes outside of the bounds, we reject the null hypothesis of parameter stability. 
+# p-value for the stability test can be retrieved with the sctest function
+sctest(estMdl)
+```
+
+```{r}
+# Let's check if the residuals are well behaved
+serial.test(estMdl, lags.pt=12)   # no AC in the residuals up to and including order lags.pt
+```
+
+```{r}
+# Let us check if this VAR is dynamically stable/stationary.
+# Transform VAR(2) into VAR(1) using the companion form and calculate the absolute eigenvalues. If any of them is greater than 1, then the model is nonstationary (unstable).
+coeffs <- Acoef(estMdl)
+A <- rbind(cbind(coeffs[[1]],coeffs[[2]]),cbind(diag(2),matrix(0, 2, 2)))
+eigv <- eigen(A,only.values = TRUE)
+abs(eigv$values)
+# Are any of the eigenvalues larger than 1? If not, the model is stable. Why? If we have A = Qeigvinv(Q), for example, the forecast h periods ahead is y_T+h = A^h y_T. Now, let's replace A with eigen decomposition.
+```
+
+```{r}
+# Plot the IRs
+# Create the IR matrices.
+#This one uses Cholesky decomposition (=ortho) of the variance-covariance matrix of the residuals:
+irf <- irf(estMdl,n.ahead=6,ortho=TRUE,impulse=c("luxx","cac"),response=c("luxx","cac"))
+plot(irf)
+#CAUTION: R's  IRF function displays IRs differently than other packages. For example, 'Orthogonal IR from Luxx' means 'Orthogonal IR of Luxx & Cac from the shocking error of the Luxx equation.
+
+# Assuming no decomposition, plot cumulative effects (neglecting potential cross-correlation effects and the fact that we should have worked with differences instead of growth rates).
+irf <- irf(estMdl,n.ahead=6,ortho=FALSE,impulse=c("luxx","cac"),response=c("luxx","cac"),cumulative=TRUE)
+plot(irf)
+
+```
+
+```{r}
+# Forecast error variance decomposition
+fevd <- fevd(estMdl,n.ahead = 6)
+par(mfrow=c(1,2),mar=c(2,2,2,2))
+plot(fevd)
+```
+
+```{r}
+# The above orthogonalized IRs impose an identifying restriction, suggesting that the 'Luxx' stock market does not respond to shocks or unexpected events in the 'Cac' stock market in the same period, while the 'Cac' stock market immediately responds to unexpected events or shocks in the 'Luxx' stock market. Is this a reasonable assumption? The 'Luxx' stock market is relatively small, whereas the 'Cac' stock market is large and highly liquid, with a significant volume of trades. It would be more logical to assume that whatever happens in the 'Luxx' stock market, being small and not globally significant, does not immediately affect the 'Cac.' On the other hand, events in the 'Cac' stock market could have an immediate impact on the 'Luxx' stock market, given the influence and size of the 'Cac' market. Let us re-estimate the IRs and FEVD by using this more reasonable assumption. 
+
+# Rearrange the series in the data frame
+df_var <- df_var[,c(1,3,2)] 
+estMdl <- VAR(df_var[,2:3], p = 2, type="const")
+
+# Plot IRs
+irf <- irf(estMdl,n.ahead=10,ortho=FALSE,impulse=c("luxx","cac"),response=c("luxx","cac"))
+plot(irf)
+
+# Plot FEVD
+fevd <- fevd(estMdl,n.ahead = 10)
+par(mfrow=c(1,2),mar=c(2,2,2,2))
+plot(fevd)
+```

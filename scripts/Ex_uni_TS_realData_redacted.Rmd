@@ -1,0 +1,297 @@
+---
+title: "Univariate TS - real data"
+output: html_notebook
+---
+
+
+## Example 4: Luxembourg Real GDP Analysis
+
+Previous examples used simulated data, which are well-behaved and simple to model. In this exercise, we will model the quarterly growth of real Gross Domestic Product (rGDP) for Luxembourg — an essential indicator of economic activity. This data presents a greater challenge due to factors like breaks, outliers, measurement errors and difficulty to detect the true model. Additionally, this data is short which makes tests unreliable. Nonetheless, those working for statistical offices or finance ministries are tasked with creating forecasts and budget projections utilizing this data.
+
+In April 2022, Statec just released the initial estimate of rGDP for 2021Q4 (note that rGDP estimates often undergo revisions). Your objective is to generate rGDP forecasts for 2022Q1 and 2022Q2.
+
+Tasks:    
+
+1. Import the Luxembourg rGDP series from an Excel file.
+2. Visualize the series and conduct stationarity tests.
+3. Determine the suitable ARIMA(p,d,q) model and assess its characteristics.
+4. Forecast quarterly rGDP for the next two periods.
+
+<span style="color:red">Throughout the document: fill in blanks marked as [??] yourself.</span>  
+
+```{r}
+rm(list=ls()) 
+# TASK 1
+# Load required packages
+library(readxl)
+library(ggplot2)
+library(stats)
+library(forecast)
+library(ggpubr)
+
+# Set working directory
+#setwd('C:\\Users\\xct385\\Desktop\\DS ws\\MADS_win25\\Exercises\\1_Ex_UNI_TS\\E_models_R')
+
+# Import data
+df <- read_excel('../data/rgdp_2021q4.xlsx')
+
+# Change it into TS object
+y <- ts(df[,"PIB_R_SA"],start=c(sub("*Q.","",df[1,"date"]),sub(".*Q","",df[1,"date"])),frequency=4)
+```
+
+```{r}
+# TASK 2
+# 2.1 Visualize the series - is it stationary or not? why? 
+plot_y  <- ggplot(data.frame(x = time(y), y = as.numeric(y)), aes(x = x, y = y)) + 
+  geom_line() + 
+  labs(title = "rGDP")
+# plot_ac  <- [??]
+# plot_pac <- [??]
+# Display plot
+# ggarrange(plot_y,plot_ac,plot_pac,ncol = 3)
+```
+
+```{r}
+# TASK 2
+# 2.2 Perform stationarity tests
+library(fpp3)
+library(aTSA)
+
+# ADF test
+# H0: UR
+# [??]
+
+# KPSS test
+# H0: NO UR
+# [??] 
+
+# PP test
+# Similar to Augmented DF test, performs worse than ADF in small samples
+# H0: UR
+pp.test(y) 
+
+print("\n\n")
+# All-in-1
+# print("------------------------------------------------")
+# stationary.test(y, method = c("adf", "pp", "kpss"))
+          
+```
+
+```{r}
+# TASK 2
+# 2.3 Difference & plot the data
+y_gr = diff(log(y))
+
+plot_y  <- ggplot(data.frame(x = time(y_gr), y = as.numeric(y_gr)), aes(x = x, y = y)) + 
+  geom_line() + 
+  labs(title = "rGDP GR")
+plot_ac  <- ggAcf(y_gr,lag.max = 10) + labs(title="ACF")
+plot_pac <- ggPacf(y_gr, lag.max = 10) + labs(title="PACF")
+# Display plot
+ggarrange(plot_y,plot_ac,plot_pac,ncol = 3)
+
+```
+
+          
+```{r}
+# ADF test
+# H0: UR
+adf.test(y_gr)
+
+# KPSS test
+# H0: NO UR
+kpss.test(y_gr) 
+
+# PP test
+# H0: UR
+pp.test(y_gr) 
+
+```
+
+```{r}
+# Select appropriate ARIMA model
+# 3.7 Select the model by using information criteria
+p_max = 5
+AIC  = vector(length=p_max, mode="numeric")
+AAIC = vector(length=p_max, mode="numeric")
+BIC  = vector(length=p_max, mode="numeric")
+for (p in 0:p_max) {
+  # estimate the model
+  mdlEst <- Arima(y_gr, order=c(p,0,0),include.constant=TRUE)
+  # store information criteria
+  AIC[p+1]  <- mdlEst$aic
+  AAIC[p+1] <- ifelse(!is.null(mdlEst$aaic), mdlEst$aaic, NA) 
+  BIC[p+1]  <- mdlEst$bic
+} 
+# p_aic <- [??] 
+# p_bic <- [??] 
+sprintf("Optimal lag according to AIC is %d",p_aic)
+sprintf("Optimal lag according to BIC is %d",p_bic)
+
+print("ICs suggest either AR(0) or AR(1).")
+print("Let us estimate AR(1) and inspect its properties.")
+```
+
+```{r}
+# 3.6 Estimate ARIMA(1,1,0) 
+# the case of missing an important regressor 
+# discuss the consequences
+mdlEst <- Arima(y,order=c(1,1,0),include.constant=TRUE) 
+summary(mdlEst)
+p_values = (1-pnorm(abs(mdlEst$coef)/sqrt(diag(mdlEst$var.coef))))*2 
+p_values = round(p_values,2)
+sprintf("P-values for the coefficients are: ")
+p_values
+checkresiduals(mdlEst,plot = TRUE, test = "LB")
+``` 
+
+```{r}
+# Compare to auto arima
+auto.arima(y)
+sprintf("Notice that Autoarima selected a seasonal model! (we will have a look at these models next time!!) ")
+sprintf("RGDP does not have a seasonal component. Auto arima is a very good, but it can make mistakes.")
+```
+
+```{r}
+# Compare to auto arima without the option of a seasonal model
+auto.arima(y,seasonal=FALSE)
+```
+
+```{r}
+# Next thing that you want to do is to check neighboring models
+# Increase AR order by 1
+# mdlEst1 <- [??] 
+summary(mdlEst1)
+p_values = (1-pnorm(abs(mdlEst1$coef)/sqrt(diag(mdlEst1$var.coef))))*2 
+p_values = round(p_values,2)
+sprintf("P-values for the coefficients are: ")
+p_values
+```
+
+```{r}
+# Add MA term
+mdlEst2 <- Arima(y,order=c(1,1,1),include.constant=TRUE) 
+summary(mdlEst2)
+summary(mdlEst2)
+p_values = (1-pnorm(abs(mdlEst2$coef)/sqrt(diag(mdlEst2$var.coef))))*2 
+p_values = round(p_values,2)
+sprintf("P-values for the coefficients are: ")
+p_values
+
+```
+
+```{r}
+# We decide to use our original model ARIMA(1,1,0)
+# Now forecast the future values of rGDP
+
+# 1-STEP AHEAD FORECAST
+mdlEst  <- Arima(y,order=c(1,1,0),include.constant=TRUE)
+fcs_1_st <- forecast::forecast(mdlEst, h=1)
+fcs_1_st$x <- tail(fcs_1_st$x,10)
+plot(fcs_1st)
+
+
+# MULTI-STEP AHEAD FORECAST
+fcs_multi_st <- forecast::forecast(mdlEst, h=10)
+fcs_multi_st$x <- tail(fcs_multi_st$x,10)
+# my_fcs$x <- my_fcs$x[(length(my_fcs$x)-10):length(my_fcs$x)]
+plot(fcs_multi_st)
+```
+
+
+```{r}
+######## 1-STEP AHEAD FORECASTS WITH EXPANDING DATA WINDOW ######
+# PSEUDO FORECASTING EXERCISE: used to test and compare models
+# Start in Q4 2015 and forecast Q1 2016
+# start in Q1 2016 and forecast Q2 2016 
+# ...
+# start in Q3 2017 and forecast Q4 2021
+# (What is the difference between expanding/rolling window?) 
+
+i_start <- which(time(y)==2015.75)
+i_end   <- length(y)-1
+fcs <- numeric(0)
+for (i in i_start:i_end-1) {
+  mdlEst_i <- Arima(y[1:i],order=c(1,1,0),include.constant=TRUE)
+  fcs_i    <- forecast::forecast(mdlEst_i, h=1)
+  fcs <- c(fcs, fcs_i$mean)
+  }
+```
+
+```{r}
+# PERFORM ALSO THE MULTI-STEP AHEAD FORECAST IN 2015Q4 
+y_sub <- window(y, , end=c(2015.75, 1))
+mdlEst <- Arima(y_sub,order=c(1,1,0),include.constant=TRUE)
+fcs_multi <- forecast::forecast(mdlEst, h=i_end-i_start+1)
+```
+
+```{r}
+# Plot ALL
+fcs_multi$x <- tail(fcs_multi$x,30)
+plot(fcs_multi)
+lines(seq(2016,2021.75,.25), fcs, col='green', lwd=2)
+lines(seq(2016,2021.75,.25), y[(i_start+1):(i_end+1)], col='black', lwd=2)
+legend(2009,17000, legend=c("TRUE", "1-STEP-AHEAD FCS","MULIT-STEP-AHEAD FCS"),
+       col=c("black", "green","blue"), lty=rep(1,3), cex=0.8)
+```
+
+```{r}
+# This one was LUX rGDP. The forecast was rather nice (by luck!). 
+# Typically multi-step ahead forecasts do not perform well. Why? 
+# Let us forecast US inflation index
+df <- read_excel('US_cpi.xlsx')
+
+# Change it into TS object
+y <- ts(df[,"CPIAUCSL"],start=c(format(as.Date(df$date[1]),"%Y"),1),frequency=4)
+
+
+i_start <- which(time(y)==2015.0)
+i_end   <- length(y)-1
+fcs <- numeric(0)
+for (i in i_start:i_end-1) {
+  mdlEst_i <- Arima(y[1:i],order=c(1,1,0),include.constant=TRUE)
+  fcs_i    <- forecast::forecast(mdlEst_i, h=1)
+  fcs <- c(fcs, fcs_i$mean)
+  }
+
+# Multi step ahead forecast 
+y_sub <- window(y, , end=c(2015.0, 1))
+mdlEst <- Arima(y_sub,order=c(1,1,0),include.constant=TRUE)
+fcs_multi <- forecast::forecast(mdlEst, h=i_end-i_start+1)
+
+# Plot ALL
+fcs_multi$x <- tail(fcs_multi$x,30)
+plot(fcs_multi,ylim = c(min(fcs_multi$x), max(y)))
+lines(seq(2015.25,2023.25,1/4), fcs, col='green', lwd=2)
+lines(seq(2015.25,2023.25,1/4), y[(i_start+1):(i_end+1)], col='black', lwd=2)
+legend(x = "topleft", legend=c("true", "1-step","multi-step"),
+       col=c("black", "green","blue"), lty=rep(1,3), cex=0.5)
+
+# Can you explain why the multi-step ahead forecast performed poorly by observing the figure? There are two reasons.  
+```
+
+```{r}
+#work with growth rates
+y[,"CPIAUCSL"] <- c(NaN,100*diff(log(y)))
+
+fcs <- numeric(0)
+for (i in i_start:i_end-1) {
+  mdlEst_i <- Arima(y[50:i],order=c(1,0,0),include.constant=TRUE)
+  fcs_i    <- forecast::forecast(mdlEst_i, h=1)
+  fcs <- c(fcs, fcs_i$mean)
+  }
+
+# Multi step ahead forecast 
+y_sub <- window(y,start = c(1959.0,2), end=c(2015.0, 1))
+mdlEst <- Arima(y_sub,order=c(1,0,0),include.constant=TRUE)
+fcs_multi <- forecast::forecast(mdlEst, h=i_end-i_start+1)
+
+# Plot ALL
+fcs_multi$x <- tail(fcs_multi$x,30)
+plot(fcs_multi,ylim = c(min(fcs_multi$x), max(y[2:length(y)])))
+lines(seq(2015.25,2023.25,1/4), fcs, col='green', lwd=2)
+lines(seq(2015.25,2023.25,1/4), y[(i_start+1):(i_end+1)], col='black', lwd=2)
+legend(x = "topleft", legend=c("true", "1-step","multi-step"),
+       col=c("black", "green","blue"), lty=rep(1,3), cex=0.5)
+
+```
