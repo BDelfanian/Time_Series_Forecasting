@@ -21,6 +21,8 @@ library(forecast)
 library(ggpubr)
 library(fpp3)
 library(aTSA)
+library(tseries)
+library(urca)
 ```
 
 The following code chunk loads data from a `.xlsx` file and creates a quarterly time series object `y` using the `date` and `opcnet` columns.\
@@ -28,7 +30,10 @@ The following code chunk loads data from a `.xlsx` file and creates a quarterly 
 It also checks if first element in `date` is already a `Date` or `POSIXt` object. If not (e.g., if it's a string or numeric from Excel), converts it to a `Date` object using the format `%d/%m/%Y` (day/month/year, e.g., "01/01/2007" becomes a `Date`).
 
 ```{r import data}
-df <- read_excel('../data/data_homework_01.xlsx', sheet = "data_y")
+df <- read_excel("../data/data_homework_01.xlsx", sheet = "data_y") |>
+  select(date, opcnet) |> 
+  tidyr::drop_na()
+
 # extract the starting date
 first_date <- df$date[1]
 if (!inherits(first_date, c("Date", "POSIXt"))) {
@@ -71,7 +76,9 @@ plot_pac <- ggPacf(ts_data, lag.max = max_lag) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggarrange(plot_ts, plot_ac, plot_pac, ncol = 3)
+ggarrange(plot_ts)
+ggarrange(plot_ac)
+ggarrange(plot_pac)
 
 ```
 
@@ -80,7 +87,7 @@ ggarrange(plot_ts, plot_ac, plot_pac, ncol = 3)
 **Interpretation**
 
 - **Time Series Plot**:\
-Stationary if mean and variance appear constant over time (no obvious trend, seasonality, or changing spread).\ Non-stationary if there's a trend (up/down drift), seasonality (repeating patterns), or heteroscedasticity (varying volatility).
+Stationary if mean and variance appear constant over time (no obvious trend, seasonality, or changing spread).\   Non-stationary if there's a trend (up/down drift), seasonality (repeating patterns), or heteroscedasticity (varying volatility).
 - **ACF Plot**:\
 Stationary if correlations **decay quickly to zero**.\
 Non-stationary if they decay slowly or remain high over many lags (indicating persistence like unit root).
@@ -88,7 +95,7 @@ Non-stationary if they decay slowly or remain high over many lags (indicating pe
 Stationary if partial correlations cut off after a few lags (suggesting finite AR order).\
 Non-stationary if they show gradual decay or significance at many lags.
 
->Based of the explanations provided above we may conclude that the `opcnet`time series is non-stationary.
+>Based of the explanations provided above we may conclude that the `opcnet`time series is stationary.
 
 ### Test the series for stationarity
 
@@ -103,18 +110,38 @@ The **Augmented Dickey–Fuller (ADF) test** is the most commonly used unit **ro
 - **Alternative hypothesis ($H_1$)**:\
   The series is stationary (or trend-stationary)
 
-**Decision Rule**
+**Test Equation Variants**
+1. No constant, no trend  
+2. With constant (most common)  
+   $$\Delta y_t = \alpha + (\rho-1)y_{t-1} + \sum_{i=1}^p \gamma_i \Delta y_{t-i} + \varepsilon_t$$
+3. With constant + linear trend
+
+```{r stationarity, ADF test}
+aTSA::adf.test(ts_data, nlag = 10)
+tseries::adf.test(ts_data)
+#print("We cannot reject H0, which says that the series is non-stationary, regardless of the type of the model.")
+```
+
+**Test Interpretation**
 
 | ADF p-value       | Decision                          |
 |-------------------|-----------------------------------|
 | p ≤ 0.05          | Reject $H_0$ → Stationary         |
 | p > 0.05          | Fail to reject → Unit root likely |
 
+The ADF test was applied under different deterministic specifications and lag lengths. While the null of a unit root is rejected for small to moderate lag orders when allowing for a drift, the result is sensitive to lag selection and disappears for larger lag lengths. Overall, the evidence for stationarity is weak and not robust.
 
-```{r stationarity, ADF test}
-adf.test(ts_data)
-print("We cannot reject H0, which says that the series is non-stationary, regardless of the type of the model.")
+```{r stationarity, ADF test, urca}
+summary(urca::ur.df(ts_data, type = "drift", selectlags = "AIC"))
 ```
+
+Using the Augmented Dickey–Fuller test with a drift, the null hypothesis of a unit root is rejected at the 1% significance level. The series is stationary around a deterministic mean.
+
+Putting everything together:
+
+- The unit root null hypothesis is rejected
+- The drift term is significant
+- No trend is included or needed
 
 #### KPSS Test
 
