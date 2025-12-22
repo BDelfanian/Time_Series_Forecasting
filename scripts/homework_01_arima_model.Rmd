@@ -7,6 +7,7 @@ output:
     toc: true
     toc_float: true
     toc_depth: 4
+    number_sections: true
 ---
 
 ```{r setup, include=FALSE}
@@ -52,7 +53,7 @@ The `ts()` function in R creates a time series object that is a numeric vector (
 
 # Stationarity and Transformations
 
-## Plot the series and its ACF & PACF
+## Plot the Series and its ACF & PACF
 **ACF** (Autocorrelation Function) measures the correlation between a time series and its lagged versions, **helping identify patterns like seasonality or trends**.
 
 **PACF** (Partial Autocorrelation Function) measures the correlation between the series and its lags **after removing the effects of intermediate lags**, useful for determining the order of autoregressive terms in models like ARIMA.
@@ -98,7 +99,7 @@ Non-stationary if they show gradual decay or significance at many lags.
 
 >Based on the explanations provided above, we may conclude that the `opcnet` time series appears to be *stationary*; however, further testing is required to confirm this.
 
-## Test the series for stationarity
+## Test the Series for Stationarity
 
 In time series analysis, assessing **stationarity** is crucial because many statistical models assume that the mean, variance, and autocorrelation structure of the series do not change over time. A common source of non-stationarity is the presence of a **unit root**, where shocks to the series have **permanent effects** and the series exhibits a stochastic trend rather than reverting to a fixed mean. The non-stationarity suggests **differencing** or **detrending** may be necessary to achieve stationarity before further modeling.
 
@@ -294,72 +295,257 @@ aTSA::adf.test(diff_data, nlag = 10)
 
 # ARIMA Model
 
-Using the stationary series obtained in Section 1, estimate ARMA models using the first 80% of the sample.  
-Select an ARIMA model that you will use for forecasting.
+The **Autoregressive Integrated Moving Average (ARIMA)** model is a flexible and widely used framework for modeling and forecasting univariate time series.\
+It captures temporal dependence through three components:\
 
-```{r arima_modeling}
-# Code to split data, estimate ARIMA models, and select one
-# Example:
-# n <- length(ts_data)
-# train_size <- floor(0.8 * n)
-# train_data <- ts_data[1:train_size]
-# model <- auto.arima(train_data)
-# summary(model)
+- an autoregressive (AR) part that models **dependence on past values**, 
+- a moving average (MA) part that accounts for **serial correlation in past shocks**, and
+- an integration (I) component that **removes non-stationarity through differencing**. 
+
+Once the series is rendered stationary, ARIMA models can be estimated using historical data and selected based on statistical criteria and diagnostic checks to ensure adequate fit and reliable forecasts.
+
+## Splitting Data into Training/Test Sets
+
+To evaluate the out-of-sample forecasting performance of the ARIMA models, the time series is divided into a **training set** and a **test set**.\
+The first **80% of the observations** are used for model estimation, while the remaining **20%** are reserved for forecast evaluation.\
+This split preserves the temporal ordering of the data, which is essential in time series analysis.
+
+```{r data splitting}
+n <- length(ts_data)
+train_size <- floor(0.8 * n)
+
+train_data <- ts_data[1:train_size]
+test_data  <- ts_data[(train_size + 1):n]
+
+length(train_data)
+length(test_data)
 ```
 
-## Model Choice
+## `Auto.arima()` model
 
-[Include all relevant elements that support your model choice, such as:  
-- regression output  
-- information criteria tables  
-- residual diagnostics and residual plots  
-- ACF/PACF of residuals  
-- test results for autocorrelation, normality, heteroskedasticity, etc.  
-Via the code chunk output.]
+As an initial benchmark, an ARIMA model is estimated using the automatic model selection procedure provided by `auto.arima()`. This function searches over a range of ARIMA specifications and selects the model that minimizes an information criterion (by default, AICc).
 
-Justify your selected model by referencing the evidence from the tables and figures.
+```{r arima_modeling}
+model_autoarima <- auto.arima(train_data)
+summary(model_autoarima)
+```
+
+The automatically selected model is `ARIMA(0,1,1)`, which implies a first difference was applied (`d = 1`) even though the stationarity analysis showed that the series is stationary in levels. In other words, `auto.arima()` unnecessarily differences the series, potentially removing important low-frequency dynamics and increasing noise.
+
+Additionally:\
+
+- The model includes only a single MA(1) term, which may be insufficient to capture the autoregressive structure suggested by the PACF of the original series.
+
+- While the in-sample error metrics (RMSE, MAE) are reasonable, the model may over-difference the series and is less interpretable, leading to suboptimal forecasting performance.
+
+Therefore, although `auto.arima()` provides a convenient starting point, it is not appropriate as the final model. A more rigorous approach, combining a **grid search** over ARMA(p,q) specifications and **residual diagnostics**, is required to select a model that respects the stationarity properties of the series.
+
+## Applying Grid-Search
+
+To select an appropriate ARMA specification for forecasting, a **grid search** was performed over ARMA(p,q) models with \(p \leq 5\) and \(q \leq 5\). Since the series was found to be stationary, no differencing was applied (\(d = 0\)).\
+The selection criteria were **AIC** and **BIC**, and the residual diagnostics were used to ensure model adequacy.
+
+```{r grid_search}
+# Define maximum AR and MA orders
+max_p <- 5
+max_q <- 5
+
+# Initialize results dataframe
+results <- expand.grid(p = 0:max_p, q = 0:max_q)
+results$AIC <- NA
+results$BIC <- NA
+
+# Fit ARMA models and store AIC/BIC
+for(i in 1:nrow(results)) {
+  model <- try(
+    Arima(train_data, order = c(results$p[i], 0, results$q[i]), include.mean = TRUE),
+    silent = TRUE
+  )
+  if(!inherits(model, "try-error")) {
+    results$AIC[i] <- AIC(model)
+    results$BIC[i] <- BIC(model)
+  }
+}
+
+# Order by AIC
+results <- results[order(results$AIC), ]
+results
+
+# Identify best models according to AIC and BIC
+best_aic <- results[which.min(results$AIC), ]
+best_bic <- results[which.min(results$BIC), ]
+
+# Estimate final candidate models
+model_aic <- Arima(train_data, order = c(best_aic$p, 0, best_aic$q), include.mean = TRUE)
+model_bic <- Arima(train_data, order = c(best_bic$p, 0, best_bic$q), include.mean = TRUE)
+
+summary(model_aic)
+summary(model_bic)
+```
+
+**Interpretation of Grid Search Results**:\
+
+- The AIC-optimal model is `ARIMA(2,0,0)`, while the BIC-optimal model is `ARIMA(1,0,0)`.
+- Both models include a non-zero mean and adequately capture the autoregressive structure of the stationary series.
+
+## Residual Diagnostics
+
+After estimating the candidate ARIMA models, residual diagnostics were performed to ensure that the models adequately capture the dependence structure of the series and that no significant autocorrelation remains.
+
+```{r residuals_diagnostics}
+# Residual diagnostics for AIC-optimal model
+checkresiduals(model_aic)
+
+# Residual diagnostics for BIC-optimal model
+checkresiduals(model_bic)
+```
+
+**Interpretation**:\
+
+- Ljung–Box test:
+  - `ARIMA(2,0,0)`: Q* = 4.84, df = 8, p-value = 0.775
+  - `ARIMA(1,0,0)`: Q* = 6.21, df = 9, p-value = 0.718\
+    In both cases, the null hypothesis of **no residual autocorrelation** cannot be rejected, indicating that the **residuals behave like white noise**.
+
+- ACF/PACF of residuals:\
+  Both models show no systematic patterns in the autocorrelation or partial autocorrelation functions of the residuals, confirming the absence of remaining serial correlation.
+
+- Model selection implications:\
+  The slight difference between AIC and BIC selection is expected: AIC favors slightly more complex models for in-sample fit, while BIC imposes a stronger penalty for model complexity, favoring more parsimonious specifications.
+
+
+## Final Model Choice
+
+To select an appropriate ARIMA specification for forecasting, a grid search over ARMA(𝑝,q) models with \(p \leq 5\) and \(q \leq 5\) was conducted using the training sample (first 80% of observations). Since the series was found to be stationary, no differencing was applied (\(d=0\)). Model selection was guided by information criteria (AIC, BIC) and residual diagnostics.
+
+The grid search results indicate that the ARIMA(2,0,0) model minimizes the Akaike Information Criterion (AIC), while the ARIMA(1,0,0) model minimizes the Bayesian Information Criterion (BIC). This divergence is expected: AIC favors more flexible models with better in-sample fit, whereas BIC penalizes complexity more heavily, favoring parsimonious models.
+
+Both candidate models were estimated and subjected to residual diagnostics. The Ljung–Box tests fail to reject the null hypothesis of no residual autocorrelation for both ARIMA(2,0,0) and ARIMA(1,0,0) models, indicating that the residuals behave as white noise. Residual ACF and PACF plots also show no systematic patterns, providing additional support for model adequacy.
+
+Initial ACF and PACF plots of the original series suggest a low-order autoregressive dependence structure, with a strong PACF spike at lag 1 and weaker effects at lag 2, consistent with AR(1) or AR(2) candidates. However, visual inspection alone is insufficient to select the optimal model, necessitating formal estimation and information criteria.
+
+Given that both ARIMA(2,0,0) and ARIMA(1,0,0) satisfy all diagnostic checks, the final choice is guided by the principle of parsimony. The **ARIMA(1,0,0)** model (BIC-optimal) is selected as the final forecasting model, balancing simplicity and adequacy while ensuring robust out-of-sample performance.
+
+- **Final model:** `ARIMA(1,0,0)` with non-zero mean  
+- **Justification:** Small sample size, parsimony, residuals pass Ljung–Box test, no systematic patterns in ACF/PACF, BIC preference
 
 # Forecast
 
-Using your chosen model from Section 2, perform one-step-ahead recursive forecasts (expanding-window forecasts) for the remaining 20% of the sample.
+Using the selected `ARIMA(1,0,0)` model from the previous section, we perform **one-step-ahead recursive forecasts** (expanding-window) for the remaining 20% of the sample. For comparison, we also generate forecasts from the `ARIMA(2,0,0)` model.
 
-```{r forecasting}
-# Code for one-step-ahead recursive forecasts
-# Example: Refer to “Ex_uni_TS_realData.Rmd”
-# forecasts <- numeric(test_size)
-# for(i in 1:test_size) {
-#   train <- ts_data[1:(train_size + i - 1)]
-#   model <- Arima(train, order = c(p, d, q))
-#   forecasts[i] <- forecast(model, h=1)$mean
-# }
-# plot(ts_data[(train_size+1):n], type="l")
-# lines(forecasts, col="red")
+```{r one_step_forecast}
+n <- length(ts_data)
+train_size <- floor(0.8 * n)
+test_size <- n - train_size
+
+actuals <- ts_data[(train_size + 1):n]
+time_test <- time(ts_data)[(train_size + 1):n]
+
+forecasts_ar1 <- numeric(test_size)
+forecasts_ar2 <- numeric(test_size)
+
+for (i in 1:test_size) {
+  
+  # Expanding window
+  train <- ts_data[1:(train_size + i - 1)]
+  
+  # ARIMA(1,0,0)
+  model_ar1 <- Arima(train, order = c(1, 0, 0), include.mean = TRUE)
+  forecasts_ar1[i] <- forecast::forecast(model_ar1, h = 1)$mean
+  
+  # ARIMA(2,0,0)
+  model_ar2 <- Arima(train, order = c(2, 0, 0), include.mean = TRUE)
+  forecasts_ar2[i] <- forecast::forecast(model_ar2, h = 1)$mean
+}
+
+# Plot forecasts
+plot(
+  time_test, actuals,
+  type = "l",
+  lwd = 2,
+  xlab = "Time",
+  ylab = "Net Issuance",
+  main = "One-step-ahead Recursive Forecasts"
+)
+
+lines(time_test, forecasts_ar1, col = "red", lwd = 2)
+lines(time_test, forecasts_ar2, col = "blue", lwd = 2)
+
+legend(
+  "topleft",
+  legend = c("Actual", "ARIMA(1,0,0)", "ARIMA(2,0,0)"),
+  col = c("black", "red", "blue"),
+  lwd = 2,
+  bty = "n"
+)
+
+# Compute RMSE for evaluation
+rmse_ar1 <- sqrt(mean((actuals - forecasts_ar1)^2))
+rmse_ar2 <- sqrt(mean((actuals - forecasts_ar2)^2))
+
+rmse_ar1
+rmse_ar2
 ```
 
-[Plot the forecasts together with the true observed values via the code chunk output.]
+**Interpretation**:\
 
-Provide a brief commentary:  
-- Does the model seem to forecast well or poorly?  
-- Are there periods where performance improves or worsens?  
-- Do you have an intuition for how the forecasts could be improved?  
-Also report the RMSE of your one-step-ahead forecasts.
+- Forecast Behavior
+  - Both ARIMA(1,0,0) and ARIMA(2,0,0) forecasts exhibit very similar patterns, consistent with the similarity in in-sample model fit.
+  - The forecasts are **relatively smooth and fail to capture abrupt changes** or sharp turning points in the observed data.
+  - This is expected given the linear and backward-looking nature of ARIMA models, which underreact to sudden shocks.
 
-```{r rmse}
-# Code to calculate RMSE
-# rmse <- sqrt(mean((forecasts - ts_data[(train_size+1):n])^2))
-# rmse
-```
+- Comparison Between Models
+  - ARIMA(2,0,0) reacts slightly faster to changes due to the additional AR term, but the improvement is marginal.
+  - Considering parsimony and BIC preference, the **`ARIMA(1,0,0)` model remains the preferable choice** for forecasting.
+
+- Forecast Accuracy
+  - RMSE provides a quantitative measure of forecast error. Although the forecasts capture the general trend of the series, large deviations occur during periods of high volatility.
+  - The performance is better in stable periods and worsens during abrupt changes, which could be improved by **incorporating external regressors**, **intervention analysis**, or **non-linear/time-varying models**.
+
+- Overall Assessment
+  - While both models satisfy the standard residual diagnostics and are therefore statistically adequate, their **out-of-sample forecasting performance is limited in magnitude**. The forecasts capture the general direction of the series but exhibit large deviations from the realized values at several points in the evaluation sample.
+  - Despite some limitations in capturing sharp movements, the ARIMA(1,0,0) model provides a statistically adequate and parsimonious forecasting framework.
+  - One-step-ahead recursive forecasts are acceptable for **short-term trend estimation** but may require alternative models for precise prediction during volatile periods.
+
 
 # Further Analysis
 
-[Optional: Answer one or both of the following:]
+This section addresses additional considerations relevant to ARIMA modeling and forecasting.
 
-- What are the consequences of estimating an ARIMA model on non-stationary data?
+- **Consequences of Estimating ARIMA on Non-Stationary Data**
 
-- Clean the data for outliers or structural breaks (do not forget to include the code in the code file).
+  Estimating an ARIMA model on non-stationary data can lead to several serious econometric and forecasting issues:
 
-- Briefly explain why the additional series is economically linked to your target variable and how its timeliness (shorter publication lag) can provide useful, up-to-date information to improve your forecast.
+  - **Unreliable parameter estimates:** Standard inference assumes stationarity. Without it, estimated AR coefficients may appear statistically significant even when no genuine relationship exists, potentially leading to misleading conclusions.  
+  - **Invalid inferential statistics:** Non-stationarity violates the assumptions underlying the asymptotic distributions of estimators. T-statistics, confidence intervals, and information criteria (AIC/BIC) may become unreliable, increasing the risk of overfitting. Models may mimic trends rather than capture true dynamics.  
+  - **Unstable forecasts:** Forecasts generated from non-stationary data often exhibit explosive behavior or implausible long-term trends. Differencing or detrending is therefore essential to ensure valid inference and stable predictive performance.
 
-```{r bonus_cleaning, eval=FALSE}
-# Optional code for cleaning data
+  In this analysis, stationarity tests (ADF, PP, KPSS) confirmed that the series is stationary after one differencing step, preventing these issues.
+
+- **Detecting Outliers or Structural Breaks**
+
+  Large outliers or structural breaks can distort parameter estimates and degrade forecast accuracy in ARIMA models. **Standardized residuals** provide a convenient tool to detect such anomalies:
+
+```{r standardized residuals}
+res <- residuals(model_ar1)
+std_res <- res / sd(res)
+
+plot(std_res, type = "h", main = "Standardized Residuals", ylab = "Standardized Residuals")
+abline(h = c(-3, 3), col = "red", lty = 2)
 ```
+
+  Observations outside ±3 standard deviations may indicate outliers or temporary shocks.
+
+  In our series, the residual plot shows no extreme deviations, suggesting that the data is free from significant outliers or structural breaks. Therefore, **no additional cleaning was necessary**.
+
+- **Use of Additional Economically Linked Series**
+
+  In practical forecasting, incorporating additional series can enhance predictive accuracy:
+
+  - **Economic relevance**: Variables that are economically linked to the target series (e.g., short-term indicators, related market variables) can capture contemporaneous dynamics.
+
+  - **Timeliness**: If the additional series is published with a shorter lag than the target variable, it provides up-to-date information that can improve forecast responsiveness, especially during periods of rapid change.
+
+  - **Integration in models**: These variables can be included in ARIMAX or regression-augmented ARIMA frameworks to reduce forecast errors and better capture short-term fluctuations.
+
+  Overall, careful consideration of stationarity, data quality, and related economic indicators is essential for robust ARIMA forecasting.
