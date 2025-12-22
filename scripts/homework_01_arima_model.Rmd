@@ -6,7 +6,7 @@ output:
   html_document:
     toc: true
     toc_float: true
-    toc_depth: 3
+    toc_depth: 4
 ---
 
 ```{r setup, include=FALSE}
@@ -50,9 +50,9 @@ head(ts_data, 12)
 ```
 The `ts()` function in R creates a time series object that is a numeric vector (or matrix for multivariate data) with a "ts" class, equipped with attributes like `tsp` (specifying start, end, and frequency), ensuring equispaced observations for time-based analysis. It supports specialized methods for plotting, forecasting, and statistical tests while maintaining chronological integrity during operations like subsetting or arithmetic.
 
-## Stationarity and Transformations
+# Stationarity and Transformations
 
-### Plot the series and its ACF & PACF
+## Plot the series and its ACF & PACF
 **ACF** (Autocorrelation Function) measures the correlation between a time series and its lagged versions, **helping identify patterns like seasonality or trends**.
 
 **PACF** (Partial Autocorrelation Function) measures the correlation between the series and its lags **after removing the effects of intermediate lags**, useful for determining the order of autoregressive terms in models like ARIMA.
@@ -87,7 +87,8 @@ ggarrange(plot_pac)
 **Interpretation**
 
 - **Time Series Plot**:\
-Stationary if mean and variance appear constant over time (no obvious trend, seasonality, or changing spread).\   Non-stationary if there's a trend (up/down drift), seasonality (repeating patterns), or heteroscedasticity (varying volatility).
+Stationary if mean and variance appear constant over time (no obvious trend, seasonality, or changing spread).\
+Non-stationary if there's a trend (up/down drift), seasonality (repeating patterns), or heteroscedasticity (varying volatility).
 - **ACF Plot**:\
 Stationary if correlations **decay quickly to zero**.\
 Non-stationary if they decay slowly or remain high over many lags (indicating persistence like unit root).
@@ -95,11 +96,13 @@ Non-stationary if they decay slowly or remain high over many lags (indicating pe
 Stationary if partial correlations cut off after a few lags (suggesting finite AR order).\
 Non-stationary if they show gradual decay or significance at many lags.
 
->Based of the explanations provided above we may conclude that the `opcnet`time series is stationary.
+>Based on the explanations provided above, we may conclude that the `opcnet` time series appears to be *stationary*; however, further testing is required to confirm this.
 
-### Test the series for stationarity
+## Test the series for stationarity
 
-#### ADF Test
+In time series analysis, assessing **stationarity** is crucial because many statistical models assume that the mean, variance, and autocorrelation structure of the series do not change over time. A common source of non-stationarity is the presence of a **unit root**, where shocks to the series have **permanent effects** and the series exhibits a stochastic trend rather than reverting to a fixed mean. The non-stationarity suggests **differencing** or **detrending** may be necessary to achieve stationarity before further modeling.
+
+### ADF Test
 
 The **Augmented Dickey–Fuller (ADF) test** is the most commonly used unit **root test**.
 
@@ -110,17 +113,49 @@ The **Augmented Dickey–Fuller (ADF) test** is the most commonly used unit **ro
 - **Alternative hypothesis ($H_1$)**:\
   The series is stationary (or trend-stationary)
 
-**Test Equation Variants**
+**Test Equation Variants**\
 1. No constant, no trend  
 2. With constant (most common)  
    $$\Delta y_t = \alpha + (\rho-1)y_{t-1} + \sum_{i=1}^p \gamma_i \Delta y_{t-i} + \varepsilon_t$$
 3. With constant + linear trend
 
-```{r stationarity, ADF test}
+**Performing the ADF test using `aTSA` library:**
+```{r stationarity, ADF test, aTSA}
 aTSA::adf.test(ts_data, nlag = 10)
-tseries::adf.test(ts_data)
-#print("We cannot reject H0, which says that the series is non-stationary, regardless of the type of the model.")
 ```
+
+`aTSA::adf.test()` provides three types of tests. For *net issuance of assets or shares by investment funds, `opcnet`*, the most suitable ADF specification is usually: **Type 2: with drift, no trend**
+
+Reasoning:\
+
+- Economic/financial context:
+  - Net issuance data is typically **mean-reverting around a non-zero level** (funds issue or redeem shares around some typical size).
+  - It rarely exhibits a strong deterministic linear trend over time (which would justify Type 3).
+
+- Type 1 (no drift, no trend):
+  - Assumes the series fluctuates around zero.  
+  - Not realistic for financial flows, which often have a positive average.
+
+- Type 3 (drift + trend):
+  - Assumes the series has a deterministic upward or downward trend.  
+  - Only appropriate if net issuance is systematically increasing or decreasing over time.  
+  - Most fund issuance series fluctuate around a stable mean with random shocks.
+
+
+**Performing the ADF test using `tseries` library:**
+```{r stationarity, ADF test, tseries}
+tseries::adf.test(ts_data)
+```
+
+`tseries::adf.test()` runs a single ADF test.  
+
+By default:
+
+- Includes a drift (intercept)
+- No deterministic trend
+- Automatically chooses the number of lags (can be set with `k`)
+
+So in effect, it is **similar to Type 2 (drift, no trend)** of `aTSA::adf.test()`.
 
 **Test Interpretation**
 
@@ -129,13 +164,15 @@ tseries::adf.test(ts_data)
 | p ≤ 0.05          | Reject $H_0$ → Stationary         |
 | p > 0.05          | Fail to reject → Unit root likely |
 
-The ADF test was applied under different deterministic specifications and lag lengths. While the null of a unit root is rejected for small to moderate lag orders when allowing for a drift, the result is sensitive to lag selection and disappears for larger lag lengths. Overall, the evidence for stationarity is weak and not robust.
+>The ADF test was applied under different deterministic specifications and lag lengths. While the null of a unit root is rejected for small to moderate lag orders when allowing for a drift, the result is sensitive to lag selection and disappears for larger lag lengths. Overall, **the evidence for stationarity is weak and not robust**.
+
+To obtain a robust assessment, we applied the ADF test using `urca::ur.df()` with `type = "drift"` and lag selection based on `AIC`. 
 
 ```{r stationarity, ADF test, urca}
 summary(urca::ur.df(ts_data, type = "drift", selectlags = "AIC"))
 ```
 
-Using the Augmented Dickey–Fuller test with a drift, the null hypothesis of a unit root is rejected at the 1% significance level. The series is stationary around a deterministic mean.
+Using the Augmented Dickey–Fuller test with a drift, the null hypothesis of a unit root is rejected at the 1% significance level. **The series is stationary around a deterministic mean**.
 
 Putting everything together:
 
@@ -143,7 +180,11 @@ Putting everything together:
 - The drift term is significant
 - No trend is included or needed
 
-#### KPSS Test
+#### Final ADF Test Conclusion
+>To assess the stationarity of the series, we first applied the Augmented Dickey–Fuller (ADF) test using both `aTSA::adf.test()` and `tseries::adf.test()`. With `aTSA`, we examined three deterministic specifications (no drift, drift only, and drift with trend) across a range of lag lengths. The results indicated that the rejection of the unit root was sensitive to lag choice: the null hypothesis was rejected for small to moderate lags when allowing for a drift, but the effect disappeared for larger lag lengths, suggesting that the evidence for stationarity was weak and not robust. To obtain a more reliable assessment, we then used `urca::ur.df()` with `type = "drift"` and lag selection based on AIC. This method accounts for finite-sample critical values and separates the test for a unit root from the significance of the drift term, providing a defensible conclusion. Using this approach, the series was found to be stationary around a non-zero mean (drift-stationary).
+
+
+### KPSS Test
 
 The **Kwiatkowski–Phillips–Schmidt–Shin (KPSS) test** tests for **stationarity** around a deterministic trend or level — the opposite hypothesis of ADF/PP tests.
 
@@ -177,10 +218,13 @@ The **Kwiatkowski–Phillips–Schmidt–Shin (KPSS) test** tests for **stationa
 
 ```{r stationarity, kpss test}
 kpss.test(ts_data)
-print("We reject H0, which says that the series is stationary, regardless of the type of the model.")
 ```
 
-#### PP Test
+#### Final KPSS Test Conclusion
+
+>The KPSS test fails to reject the null hypothesis of level stationarity (p-value ≥ 0.10). This indicates that there is no statistical evidence against the series being stationary around a constant. When combined with the ADF results, this provides consistent evidence that the series is stationary.
+
+### PP Test
 The **Phillips–Perron (PP) test** is a popular unit root test used to determine whether a time series is stationary or contains a unit root.
 
 **Hypotheses**
@@ -206,42 +250,49 @@ The **Phillips–Perron (PP) test** is a popular unit root test used to determin
 
 **Decision Rule**
 
-| KPSS p-value       | Conclusion                          |
+| PP p-value       | Conclusion                          |
 |--------------------|-------------------------------------|
 | p-value < 0.05           | Reject $H_0$ → series is stationary   |
 | p-value > 0.05           | Fail to reject $H_0$ → evidence of unit root (non-stationary)       |
 
-**Practical Recommendation**
-
-Run **both ADF and PP** tests. Conclusions are strongest when both tests agree.
-
 ```{r stationarity, pp test}
 # Similar to Augmented DF test, performs worse than ADF in small samples
-# H0: UR
 pp.test(ts_data)
-print("We cannot reject H0, which says that the series is non-stationary, regardless of the type of the model.")
 ```
 
-#### Comparing All Tests
+#### Final PP Test Conclusion
+>The Phillips–Perron test rejects the null hypothesis of a unit root at the 1% significance level (p ≤ 0.01). This provides evidence that the series is stationary. Since the PP test is robust to serial correlation and heteroskedasticity, this result supports and strengthens the conclusions obtained from the ADF and KPSS tests.
+
+### Comparing All Tests
 
 ```{r stationarity, compare all}
 stationary.test(ts_data, method = c("adf", "pp", "kpss"))
 ```
 
+#### Final Stationarity Assessment
 
-[Insert the tables (ADF, KPSS, PP, …) directly after the subsection title via the code chunk output.]
+The stationarity of the series was assessed using multiple complementary tests, including the Augmented Dickey–Fuller (ADF), Phillips–Perron (PP), and KPSS tests.\
 
-Interpret the test results and conclude whether the series is stationary.  
-Explain which transformation(s) (differencing, growth rates, seasonal differencing, etc.) you will apply to make the series stationary and ready for ARIMA modelling (do not forget to re-test the series after you transformed it to stationarity!).
+- The ADF test results, across different deterministic specifications and moderate lag lengths, generally reject the null hypothesis of a unit root when a drift is included.\
+- The Phillips–Perron test also rejects the null hypothesis of a unit root at the 1% significance level, providing robust evidence of stationarity while accounting for serial correlation and heteroskedasticity.\
+- In contrast, the KPSS test fails to reject the null hypothesis of level stationarity, indicating no evidence against stationarity around a constant.
+
+Taken together, these results provide consistent evidence that the series is **stationary around a non-zero mean (drift-stationary)**. Although the ADF test shows some sensitivity to lag length in exploratory settings, the results obtained using `urca::ur.df()` with lag selection based on AIC, combined with the PP and KPSS tests, support the conclusion that the series does not contain a unit root.
+
+#### Implications for ARIMA Modelling
+
+Since the series is already stationary in levels, **no differencing is required** to achieve stationarity. Applying first differences or growth rates would therefore **risk overdifferencing** and removing meaningful dynamics from the data. Consequently, the original series will be used directly for ARIMA modelling. As a robustness check, stationarity tests may be re-applied after any transformation considered during model diagnostics.
 
 ```{r transformations}
-# Code to apply transformations and re-test
-# Example:
-# diff_data <- diff(ts_data)
-# adf.test(diff_data)
+diff_data <- diff(ts_data)
+aTSA::adf.test(diff_data, nlag = 10)
 ```
 
-## ARIMA Model
+**Interpretation:**\
+
+>The ADF test applied to the first-differenced series strongly rejects the null hypothesis of a unit root across all deterministic specifications and lag lengths, with p-values uniformly below 1%. This indicates that **the differenced series is clearly stationary**. However, since previous ADF, PP, and KPSS tests already provided evidence that the original series is stationary in levels, **differencing is not required to achieve stationarity**. Consequently, applying first differences would likely result in overdifferencing. For ARIMA modelling, the series will therefore be used in levels with integration order \( d = 0 \).
+
+# ARIMA Model
 
 Using the stationary series obtained in Section 1, estimate ARMA models using the first 80% of the sample.  
 Select an ARIMA model that you will use for forecasting.
@@ -256,7 +307,7 @@ Select an ARIMA model that you will use for forecasting.
 # summary(model)
 ```
 
-### Model Choice
+## Model Choice
 
 [Include all relevant elements that support your model choice, such as:  
 - regression output  
@@ -268,7 +319,7 @@ Via the code chunk output.]
 
 Justify your selected model by referencing the evidence from the tables and figures.
 
-## Forecast
+# Forecast
 
 Using your chosen model from Section 2, perform one-step-ahead recursive forecasts (expanding-window forecasts) for the remaining 20% of the sample.
 
@@ -299,7 +350,7 @@ Also report the RMSE of your one-step-ahead forecasts.
 # rmse
 ```
 
-## Further Analysis
+# Further Analysis
 
 [Optional: Answer one or both of the following:]
 
