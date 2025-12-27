@@ -1,6 +1,8 @@
 ---
 title: "Homework I – ARIMA Model"
 authors: "Behrouz Delfanian, Panagiotis Valsamis"
+affiliation: "University of Luxembourg"
+description: "Practical Data Science for the Public Sector: Time Series Forecasting"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -8,6 +10,15 @@ output:
     toc_float: true
     toc_depth: 4
     number_sections: true
+    code_folding: hide
+  pdf_document:
+    toc: true
+    number_sections: true
+params: {}
+knitr:
+  opts_chunk:
+    message: false
+    warning: false
 ---
 
 ```{r setup, include=FALSE}
@@ -31,7 +42,7 @@ The following code chunk loads data from a `.xlsx` file and creates a quarterly 
 It also checks if first element in `date` is already a `Date` or `POSIXt` object. If not (e.g., if it's a string or numeric from Excel), converts it to a `Date` object using the format `%d/%m/%Y` (day/month/year, e.g., "01/01/2007" becomes a `Date`).
 
 ```{r import data}
-df <- read_excel("../data/data_homework_01.xlsx", sheet = "data_y") |>
+df <- read_excel("../../data/data_homework_01.xlsx", sheet = "data_y") |>
   select(date, opcnet) |> 
   tidyr::drop_na()
 
