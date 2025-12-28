@@ -1,5 +1,5 @@
 ---
-title: "Homework II – VAR Model"
+title: "VAR Model"
 authors: "Behrouz Delfanian, Panagiotis Valsamis"
 affiliation: "University of Luxembourg"
 description: "Practical Data Science for the Public Sector: Time Series Forecasting"
@@ -30,6 +30,8 @@ library(dplyr)
 library(tibble)
 library(purrr)
 library(vars)
+library(forecast)
+library(ggplot2)
 ```
 
 ## Introduction to VAR Models
@@ -159,7 +161,7 @@ ind_start_x <- which(data_x$date == as.Date(start_date))                        
 ind_end_x <- which(data_x$date == as.Date(end_date))
 data_x <- data_x[ind_start_x:ind_end_x, ]
 
-data_y <- read_excel("../../data/data_homework_01.xlsx", sheet = "data_y") |>
+data_y <- read_excel("../../data/data_homework.xlsx", sheet = "data_y") |>
   select(date, opcnet) |> 
   tidyr::drop_na()
 
@@ -343,7 +345,7 @@ Here are the descriptions for the series highlighted in the analysis:
 | emp_de_oe_base_q      | DE, Employment, total                                                      |
 
 
-The data-driven analysis indicates that `opcnet` (Net issuance of assets or shares by regulated Luxembourg investment funds, UCITS) is most strongly correlated with `cpi_i2015_inx_lu_q_sa` (Luxembourg, Consumer Price Index, Total, Overall, Index, Seasonally Adjusted). This is reasonable:
+The data-driven analysis indicates that `opcnet` (Net issuance of assets or shares by investment funds) is most strongly correlated with `cpi_i2015_inx_lu_q_sa` (Luxembourg, Consumer Price Index, Total, Overall, Index, Seasonal adjusted). This is reasonable:
 
 - `opcnet` reflects investment fund activity in Luxembourg, which could be sensitive to local inflation or price levels, captured by `cpi_i2015_inx_lu_q_sa`.
 
@@ -356,7 +358,7 @@ _ The other series, `emp_de_oe_base_q`, is an employment indicator for Germany, 
 
 Based on both theory and data, the selection of an additional series for the VAR model is motivated as follows.
 
-The target series, **`opcnet`** (*Net issuance of assets or shares by Luxembourg-domiciled investment funds*), reflects investor behavior and is influenced by financial conditions, macroeconomic indicators, and expectations.  
+The target series, **`opcnet`** (*Net issuance of assets or shares by investment funds*), reflects investor behavior and is influenced by financial conditions, macroeconomic indicators, and expectations.  
 
 - **Theory-based reasoning:** Economic theory suggests that net fund issuance responds to:  
   1. **Financial market performance** – e.g., equity indices (`stoxx50_oe_base_q`) indicate investor wealth and return expectations.  
@@ -370,7 +372,7 @@ The target series, **`opcnet`** (*Net issuance of assets or shares by Luxembourg
 
 Considering both theoretical relevance and empirical correlation, a promising candidate series to include in the VAR model is:
 
-- **`cpi_i2015_inx_lu_q_sa`** — *Luxembourg Consumer Price Index, total, seasonally adjusted*  
+- **`cpi_i2015_inx_lu_q_sa`** — *Luxembourg, Consumer Price Index, Total, Overall, Index, Seasonal adjusted*  
 
 **Rationale:**  
 This series is both theoretically plausible, as inflation affects investor behavior and fund allocations, and empirically relevant, as it consistently appears among the most correlated series with `opcnet`. Including it allows the VAR model to capture domestic macroeconomic dynamics that influence fund issuance, complementing other theory-based financial variables.
@@ -385,48 +387,53 @@ We use the first 80% of the data to estimate the VAR model and determine the **o
 # Define the two stationary series
 trg_series = "opcnet"                                                           # Target series
 exp_series = "L1.cpi_i2015_inx_lu_q_sa"                                         # Explanatory series
-stationary_series <- y_xx[, c(trg_series, exp_series)]
+stationary_series <- y_xx[, c("date", trg_series, exp_series)]
+stationary_series <- na.omit(stationary_series)
 
 # Split first 80% for estimation
-n_obs <- nrow(stationary_series)
-train_end <- floor(0.8 * n_obs)
-train_data <- stationary_series[1:train_end, ]
-train_data <- na.omit(train_data)
-test_data  <- stationary_series[(train_end + 1):n_obs, ]
+n_total <- nrow(stationary_series)
+n_train <- floor(0.8 * n_total)
+train_data <- stationary_series[1:n_train, ]
+#train_data <- na.omit(train_data)
+test_data  <- stationary_series[(n_train + 1):n_total, ]
 ```
 
 ### Lag Selection
 
+Several combinations of explanatory series (`L1.cpi_i2015_inx_lu_q_sa`, `L2.cpi_i2015_inx_lu_q_sa`, `L2.p_msn_fr_oe_base_q`, `L3.p_msn_fr_oe_base_q`, `L2.trb1g_vj_clv_qna_sa`) and lag orders (`1`, `2`, `3`) were tested.  
+
+The final specification is selected based on a logical trade-off between information criteria, coefficient significance, residual diagnostics, and model stability.
+
 #### ACF and PACF
 
 ```{r lag, acf, pacf}
-acf(train_data$opcnet, main = "ACF of opcnet")
-pacf(train_data$opcnet, main = "PACF of opcnet")
-acf(train_data$L1.cpi_i2015_inx_lu_q_sa, main = "ACF of L1.cpi_i2015_inx_lu_q_sa")
-pacf(train_data$L1.cpi_i2015_inx_lu_q_sa, main = "PACF of L1.cpi_i2015_inx_lu_q_sa")
+acf(train_data[[2]], main = paste("ACF of", trg_series))
+pacf(train_data[[2]], main = paste("ACF of", trg_series))
+acf(train_data[[3]], main = paste("ACF of", exp_series))
+pacf(train_data[[3]], main = paste("ACF of", exp_series))
 ```
 
-**Comment:**
-The ACF and PACF plots suggest potential lag length based on where the autocorrelations decay or cut off. For example, spikes at lag 1 and 2 indicate that including 1–2 lags may capture the main autocorrelation structure.
+**Comment:**  
+The ACF and PACF plots for both series show a rapid decay after the first lag, with no strong evidence of long-memory behavior. This suggests that a low-order VAR (one or two lags) is sufficient to capture the dynamic dependence structure.
 
 #### Information Criteria
 
 ```{r info criteria}
-VARselect(train_data, lag.max = 8, type = "const")$selection
+VARselect(train_data[,2:3], lag.max = 8, type = "const")$selection
 ```
 
-**Comment:**
-The table of AIC, HQ, SC and FPE values indicates the optimal lag length that minimizes each criterion. In this case, [X] lags are suggested by the BIC, which is often preferred for parsimony.
+**Comment:**  
+All information criteria (AIC, HQ, SC, and FPE) unanimously select one lag. Given the relatively small sample size, the agreement across criteria strongly supports a parsimonious (fewer parameters, easier to interpret) VAR(1) specification.
 
 #### Significance of Coefficients
 
 ```{r significance of coeff}
-var_model <- VAR(train_data, p = 1, type = "const")  # use lag from info criteria
+var_model <- VAR(train_data[,2:3], p = 1, type = "const")  # use lag from info criteria
 summary(var_model)
 ```
 
-**Comment:**
-Most coefficients are statistically significant at conventional levels, confirming that the chosen lags capture meaningful relationships between the series. Non-significant coefficients may indicate overfitting or the need to reduce the lag length.
+**Comment:**  
+In the VAR(1) model, the lag of the explanatory CPI series is statistically significant in the `opcnet` equation, indicating meaningful predictive content. When higher-order lags were included, additional coefficients were largely insignificant, suggesting that VAR(2) introduces unnecessary complexity without substantial gains in explanatory power.
 
 #### Residual Autocorrelation Tests
 
@@ -434,15 +441,274 @@ Most coefficients are statistically significant at conventional levels, confirmi
 serial.test(var_model, lags.pt = 10, type = "PT.asymptotic")
 ```
 
-**Comment:**
-The Ljung-Box test on residuals shows whether autocorrelation remains. P-values above 0.05 indicate no significant autocorrelation, suggesting the model adequately captures the dynamics.
+**Comment:**  
+The Portmanteau test fails to reject the null hypothesis of no residual autocorrelation (p-value > 0.05). This indicates that the VAR(1) specification adequately captures the serial dependence in the data, and higher lag orders are not required to whiten the residuals.
 
 #### Stability Checks
 
 ```{r stability checks}
-stability(var_model, type = "OLS-CUSUM")
+stability_test <- stability(var_model, type = "OLS-CUSUM")
+plot(stability_test)
 ```
 
-**Comment:**
-The stability plot confirms that all roots lie within the unit circle, indicating that the VAR model is stable and suitable for forecasting. If roots were outside, model re-specification would be necessary.
+**OLS–CUSUM Stability Test**
+
+The OLS–CUSUM test assesses the stability of the VAR coefficients over time.  
+The plot shows the cumulative sum of recursive residuals together with 5% critical bounds.
+
+**Comment:**  
+The CUSUM path remains entirely within the confidence bands throughout the sample period. Therefore, we do not reject the null hypothesis of parameter stability, confirming that the estimated VAR(1) model is structurally stable.
+
+### Final Model Choice
+
+Based on the combined evidence, the final model is specified as a **VAR(1)** with:
+
+- target series: `opcnet`,
+
+- explanatory series: `L1.cpi_i2015_inx_lu_q_sa`.
+
+This specification represents a balanced trade-off between goodness of fit, parsimony, statistical significance, well-behaved residuals, and coefficient stability, making it suitable for inference and forecasting.
+
+### Economic Interpretation of the VAR Specification
+
+The selected VAR(1) model linking `opcnet` (Net issuance of assets or shares by investment funds) and the lagged CPI (`cpi_i2015_inx_lu_q_sa`) is economically well-founded.
+
+The Consumer Price Index reflects overall inflationary conditions, which influence household savings behavior, investment decisions, and expectations regarding monetary policy. These effects do not materialize instantaneously but operate with delays due to information processing, portfolio reallocation, and institutional frictions. Given the quarterly frequency of the data, a one-quarter lag is therefore economically appropriate.
+
+The estimated negative effect of lagged CPI on net fund issuance is consistent with the notion that higher inflation reduces real returns and may lead to tighter financial conditions, thereby dampening demand for investment fund shares. Consequently, the chosen explanatory variable and lag structure capture a plausible macro–financial transmission mechanism.
+
+## One-Step-Ahead Forecast
+
+To evaluate the out-of-sample forecasting performance, we conduct **one-step-ahead recursive forecasts** over the last 20% of the sample.
+
+At each forecast origin (t), the models are re-estimated using all available observations up to that point:
+
+- First, the models are estimated on observations 1,...,T (with T corresponding to 80% of the sample).
+- A one-step-ahead forecast for T+1 is produced.
+- The sample is then expanded by one observation, and the process is repeated until the end of the dataset.
+
+Two competing models are considered:
+
+- A **VAR(1)** model including `opcnet` and `L1.cpi_i2015_inx_lu_q_sa`
+- A univariate **ARIMA(1,0,0)** model for `opcnet`
+
+This recursive strategy ensures that both models are evaluated under identical forecasting conditions and avoids look-ahead bias.
+
+```{r var, arima forecase}
+# Initialize vector for VAR forecasts
+var_forecasts <- numeric(n_total - n_train)
+
+# Initialize vector for ARIMA forecasts
+arima_forecasts <- numeric(n_total - n_train)
+
+for (t in 1:(n_total - n_train)) {
+  # Recursive estimation
+  var_fit <- VAR(stationary_series[1:(n_train + t - 1), 2:3], p = 1, type = "const")
+  arima_fit <- Arima(stationary_series$opcnet[1:(n_train + t - 1)], order = c(1,0,0), include.mean = TRUE)
+  
+  # Forecast one step ahead
+  var_pred <- predict(var_fit, n.ahead = 1)
+  
+  # Store forecast for opcnet
+  var_forecasts[t] <- var_pred$fcst$opcnet[1, "fcst"]
+  arima_forecasts[t] <- forecast::forecast(arima_fit, h = 1)$mean
+}
+
+# Actual values
+actual <- stationary_series[(n_train + 1):n_total, "opcnet"]
+
+# Compute RMSE
+var_rmse <- sqrt(mean((var_forecasts - actual)^2))
+arima_rmse <- sqrt(mean((arima_forecasts - actual)^2))
+```
+
+
+```{r forecast rmse}
+cat("VAR(1) RMSE:", var_rmse, "\n")
+cat("ARIMA(1,0,0) RMSE:", arima_rmse, "\n")
+```
+
+### Forecast Accuracy (RMSE)
+
+The forecasting accuracy is assessed using the **Root Mean Squared Error (RMSE)** over the forecast evaluation period.
+
+* **VAR(1) RMSE:** `r round(var_rmse, 3)`
+* **ARIMA(1,0,0) RMSE:** `r round(arima_rmse, 3)`
+
+**Interpretation:**  
+The VAR(1) model achieves a lower RMSE than the ARIMA(1,0,0), indicating superior one-step-ahead forecasting performance. This suggests that incorporating information from inflation dynamics (CPI) improves forecasts of net fund issuance beyond what can be achieved using only the past values of `opcnet`.
+
+### Visual Comparison of Forecasts
+
+```{r plot forcasts}
+# Create a time index for the forecast period
+forecast_dates <- stationary_series$date[(n_train + 1):n_total]
+
+# Combine into a data frame
+forecast_df <- data.frame(
+  date   = forecast_dates,
+  Actual = actual,
+  VAR    = var_forecasts,
+  ARIMA  = arima_forecasts
+)
+
+ggplot(forecast_df, aes(x = date)) +
+  # Actual series
+  geom_line(aes(y = Actual, colour = "Actual"), linewidth = 1) +
+  
+  # VAR forecast
+  geom_line(aes(y = VAR, colour = "VAR(1)"), linewidth = 1) +
+  
+  # ARIMA forecast
+  geom_line(aes(y = ARIMA, colour = "ARIMA(1,0,0)"), linewidth = 1) +
+  
+  scale_colour_manual(
+    name   = "",
+    values = c(
+      "Actual"        = "black",
+      "VAR(1)"        = "blue",
+      "ARIMA(1,0,0)"  = "red"
+    )
+  ) +
+  
+  labs(
+    title = "One-Step-Ahead Forecasts: VAR(1) vs ARIMA(1,0,0)",
+    x = "Date",
+    y = "opcnet"
+  ) +
+  
+  theme_minimal() +
+  theme(
+    legend.position = "top"
+  )
+
+```
+
+The figure compares the actual values of `opcnet` with the one-step-ahead forecasts from both models:
+
+- **Black line:** Actual series
+- **Blue line:** VAR(1) forecasts
+- **Red line:** ARIMA(1,0,0) forecasts
+
+**Interpretation:**  
+Both models capture the broad direction of movements in `opcnet`, but the VAR(1) forecasts track the actual series more closely, particularly during turning points. The ARIMA model appears smoother and reacts more slowly to changes, reflecting its reliance solely on the autoregressive structure of `opcnet`. In contrast, the VAR model benefits from additional information contained in CPI, allowing for more responsive and accurate predictions.
+
+### Overall Conclusion
+
+The results indicate that the **VAR(1) model dominates the ARIMA(1,0,0)** in terms of out-of-sample forecast accuracy. This finding is consistent with economic intuition: inflation dynamics influence investors’ real returns and portfolio decisions, making CPI a relevant explanatory variable for net issuance of investment fund shares. Consequently, modeling these interactions explicitly within a VAR framework leads to improved forecasting performance.
+
+
+## Further Analysis
+
+### Impulse Response Analysis
+
+To further investigate the **dynamic interaction** between the variables, impulse response functions (IRFs) are computed from the estimated VAR(1) model. The analysis focuses on the response of the main variable, `opcnet`, to a one–standard-deviation shock in the explanatory variable, `L1.cpi_i2015_inx_lu_q_sa`.
+
+Impulse responses are identified using a **Cholesky decomposition**, which requires an assumption on the contemporaneous ordering of the variables. Since the direction of **instantaneous causality** between inflation and investment fund flows is not obvious, IRFs are reported under both possible orderings to assess the robustness of the results.
+
+#### Ordering 1: `opcnet` → CPI
+
+In the first specification, the VAR is ordered as (`opcnet`, `L1.cpi_i2015_inx_lu_q_sa`).  
+This implies that shocks to `opcnet` may affect CPI contemporaneously, while `opcnet` responds to CPI shocks only with a lag.
+
+The VAR(1) model is estimated on the training sample (first 80% of observations), and the impulse response of `opcnet` to a shock in CPI is computed as follows:
+
+```{r irf cpi to opcnet}
+var_model_opcnet_first <- VAR(train_data[, 2:3], p = 1, type = "const")
+
+irf_cpi_to_opcnet_rev <- irf(
+  var_model_opcnet_first,
+  impulse  = "L1.cpi_i2015_inx_lu_q_sa",
+  response = "opcnet",
+  n.ahead  = 12,
+  boot     = TRUE
+)
+
+plot(irf_cpi_to_opcnet_rev)
+```
+
+#### Ordering 2: CPI → `opcnet`
+
+In the alternative specification, the VAR is ordered as (`L1.cpi_i2015_inx_lu_q_sa`, `opcnet`).  
+This ordering allows CPI shocks to affect `opcnet` contemporaneously, while CPI responds to `opcnet` only with a lag.
+
+The impulse response is computed from the re-estimated VAR:
+
+```{r irf trg to exp}
+var_model_cpi_first <- VAR(train_data[, c(3,2)], p = 1, type = "const")
+
+irf_cpi_to_opcnet <- irf(
+var_model_cpi_first,
+impulse  = "L1.cpi_i2015_inx_lu_q_sa",
+response = "opcnet",
+n.ahead  = 12,
+boot     = TRUE
+)
+
+plot(irf_cpi_to_opcnet)
+```
+
+A positive shock to CPI generates an immediate negative response in `opcnet`, reaching its maximum magnitude within the first two quarters. The response gradually converges back to zero and becomes negligible after approximately 6–8 quarters.
+
+The bootstrap confidence intervals indicate that the **short-run response is statistically meaningful**, while longer-horizon effects are not distinguishable from zero. This suggests that inflationary pressures may temporarily reduce net issuance by investment funds, potentially reflecting valuation effects, monetary tightening expectations, or portfolio rebalancing behavior.
+
+#### Interpretation and Robustness
+
+Across both orderings, the qualitative pattern of the impulse response is very similar. CPI shocks induce a short-lived negative effect on `opcnet`, which dissipates over time and does not lead to persistent deviations.
+
+While the magnitude of the initial response differs slightly across orderings, the direction, timing, and transitory nature of the effect remain robust. This indicates that the main conclusions do not hinge critically on the assumed contemporaneous causal structure.
+
+Overall, the impulse response analysis complements the forecasting results: although CPI shocks have a measurable short-run impact on `opcnet`, the transmission mechanism is limited in duration, consistent with the modest but non-negligible predictive gains observed in the VAR relative to the ARIMA benchmark.
+
+### Granger Causality Tests
+
+To formally assess whether past values of one variable contain predictive information about the other, Granger causality tests are conducted based on the estimated VAR(1) model. **Granger causality does not imply true economic causation**; rather, it evaluates whether lagged values of one series improve the prediction of another.
+
+The tests are performed on the training sample using the same lag length as the VAR model.
+
+#### Does CPI Granger-cause `opcnet`?
+
+Null hypothesis: Lagged values of CPI do not Granger-cause `opcnet`.
+
+```{r causality, cpi}
+causality(var_model_cpi_first, cause = "L1.cpi_i2015_inx_lu_q_sa")
+```
+
+- F-Test = 6.0227, p-value = 0.0158
+
+- **Interpretation**: Since the p-value < 0.05, we reject the null hypothesis that lagged CPI does not Granger-cause `opcnet`.
+
+- Conclusion: Past values of CPI provide statistically significant information for predicting `opcnet`.
+
+#### Does `opcnet` Granger-cause CPI?
+
+Null hypothesis: Lagged values of `opcnet` do not Granger-cause CPI.
+
+Unlike impulse response analysis, Granger causality tests are based solely on lagged coefficients and therefore do not depend on the contemporaneous ordering of variables. As a result, both causality directions are tested using the same estimated VAR(1) model.
+
+```{r causality, opcnet}
+causality(var_model_cpi_first, cause = "opcnet")
+```
+
+- F-Test = 1.2199, p-value = 0.2719
+
+- **Interpretation**: The p-value > 0.05, so we fail to reject the null hypothesis.
+
+- Conclusion: Past values of `opcnet` do not significantly improve the prediction of CPI.
+
+#### Instantaneous Causality
+
+- Test statistic = 0.40752, p-value = 0.5232 for both directions
+
+- **Interpretation**: p-value > 0.05, so we fail to reject the null hypothesis.
+
+- Conclusion: There is no evidence of instantaneous causality between CPI and `opcnet`; that is, they do not have a contemporaneous causal effect on each other.
+
+#### Summary
+
+- Causal effect from CPI to `opcnet` exists with a lag (Granger causality).
+
+- Causal effect from `opcnet` to CPI does not exist.
+
+- No instantaneous causal relationship is observed in either direction.
 

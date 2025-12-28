@@ -1,5 +1,5 @@
 ---
-title: "Homework I – ARIMA Model"
+title: "ARIMA Model"
 authors: "Behrouz Delfanian, Panagiotis Valsamis"
 affiliation: "University of Luxembourg"
 description: "Practical Data Science for the Public Sector: Time Series Forecasting"
@@ -42,7 +42,7 @@ The following code chunk loads data from a `.xlsx` file and creates a quarterly 
 It also checks if first element in `date` is already a `Date` or `POSIXt` object. If not (e.g., if it's a string or numeric from Excel), converts it to a `Date` object using the format `%d/%m/%Y` (day/month/year, e.g., "01/01/2007" becomes a `Date`).
 
 ```{r import data}
-df <- read_excel("../../data/data_homework_01.xlsx", sheet = "data_y") |>
+df <- read_excel("../../data/data_homework.xlsx", sheet = "data_y") |>
   select(date, opcnet) |> 
   tidyr::drop_na()
 
