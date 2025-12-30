@@ -29,6 +29,7 @@ library(readxl)
 library(dplyr)
 library(tibble)
 library(purrr)
+library(tseries)
 library(vars)
 library(forecast)
 library(ggplot2)
@@ -176,6 +177,53 @@ The sample period is restricted to start on **2007-04-01** and end at the last a
 
 As a result, both datasets are aligned in terms of time span and frequency, making them suitable for joint analysis and combination in a multivariate time series framework.
 
+#### Stationarity Analysis, data_x
+
+```{r stationarity check, data_x}
+
+ts_vars <- data_x |> 
+  select(-date) |> 
+  names()
+
+stationarity_results <- map_dfr(ts_vars, function(var) {
+  
+  series <- suppressWarnings(as.numeric(data_x[[var]]))
+  series <- na.omit(series)
+  
+  if (length(series) < 10 || sd(series) == 0) {
+    return(tibble(
+      variable = var,
+      adf_statistic = NA_real_,
+      adf_p_value = NA_real_,
+      kpss_statistic = NA_real_,
+      kpss_p_value = NA_real_,
+      stationary = NA,
+      note = "Series too short or constant"
+    ))
+  }
+  
+  adf  <- suppressWarnings(tseries::adf.test(series))
+  kpss <- suppressWarnings(tseries::kpss.test(series))
+  
+  stationary_flag <- (adf$p.value < 0.05) & (kpss$p.value > 0.05)
+  
+  tibble(
+    variable = var,
+    adf_statistic  = as.numeric(adf$statistic),
+    adf_p_value    = adf$p.value,
+    kpss_statistic = as.numeric(kpss$statistic),
+    kpss_p_value   = kpss$p.value,
+    stationary     = stationary_flag,
+    note = ifelse(stationary_flag,
+                  "Stationary (ADF reject, KPSS not reject)",
+                  "Non-stationary or inconclusive")
+  )
+})
+
+stationarity_results[stationarity_results$stationary == FALSE, ]
+```
+
+
 #### Data Preparation
 
 The following code chunk constructs the final dataset used for VAR estimation and forecasting. First, the target series (`opcnet`) is appended to the explanatory dataset, creating a single data object that contains all variables aligned by time. The maximum lag length (`p_max`) and the forecast horizon (`k`) are then specified, and the name of the dependent variable is explicitly declared.
@@ -195,6 +243,52 @@ The function `prepare_y_xx()`—sourced earlier from the `helper_functions` dire
 The function then aligns the data for a \(k\)-step-ahead forecast by shifting the dependent variable forward in time. Autoregressive lags up to order `p_max` are added for both the dependent variable and the explanatory variables. Any lags exceeding the specified maximum are removed to ensure a consistent model structure.
 
 Finally, the lagged dependent and explanatory variables are merged into a single dataset, indexed by date. The resulting object contains the appropriately lagged and aligned variables required for estimating the VAR model and producing recursive forecasts.
+
+#### Stationarity Analysis, y_xx
+
+```{r stationarity check, y_xx}
+
+ts_vars <- y_xx |> 
+  select(-date) |> 
+  names()
+
+stationarity_results <- map_dfr(ts_vars, function(var) {
+  
+  series <- suppressWarnings(as.numeric(y_xx[[var]]))
+  series <- na.omit(series)
+  
+  if (length(series) < 10 || sd(series) == 0) {
+    return(tibble(
+      variable = var,
+      adf_statistic = NA_real_,
+      adf_p_value = NA_real_,
+      kpss_statistic = NA_real_,
+      kpss_p_value = NA_real_,
+      stationary = NA,
+      note = "Series too short or constant"
+    ))
+  }
+  
+  adf  <- suppressWarnings(tseries::adf.test(series))
+  kpss <- suppressWarnings(tseries::kpss.test(series))
+  
+  stationary_flag <- (adf$p.value < 0.05) & (kpss$p.value > 0.05)
+  
+  tibble(
+    variable = var,
+    adf_statistic  = as.numeric(adf$statistic),
+    adf_p_value    = adf$p.value,
+    kpss_statistic = as.numeric(kpss$statistic),
+    kpss_p_value   = kpss$p.value,
+    stationary     = stationary_flag,
+    note = ifelse(stationary_flag,
+                  "Stationary (ADF reject, KPSS not reject)",
+                  "Non-stationary or inconclusive")
+  )
+})
+
+stationarity_results[stationarity_results$stationary == FALSE, ]
+```
 
 #### Correlated Variables
 
@@ -352,6 +446,52 @@ The data-driven analysis indicates that `opcnet` (Net issuance of assets or shar
 _ The other series, `emp_de_oe_base_q`, is an employment indicator for Germany, which is geographically and economically less directly connected to Luxembourg’s fund issuance; a lower correlation makes sense.
 
 - The lack of description for `p_msn_fr_oe_base_q` limits interpretation, but its presence among the top correlated series does not invalidate the result—it just requires cautious reporting.
+
+#### Stationarity Analysis, top5_freq
+
+```{r stationarity check, tot5_freq}
+
+ts_vars <- y_xx |> 
+  select(top5_freq$Series) |> 
+  names()
+
+stationarity_results <- map_dfr(ts_vars, function(var) {
+  
+  series <- suppressWarnings(as.numeric(y_xx[[var]]))
+  series <- na.omit(series)
+  
+  if (length(series) < 10 || sd(series) == 0) {
+    return(tibble(
+      variable = var,
+      adf_statistic = NA_real_,
+      adf_p_value = NA_real_,
+      kpss_statistic = NA_real_,
+      kpss_p_value = NA_real_,
+      stationary = NA,
+      note = "Series too short or constant"
+    ))
+  }
+  
+  adf  <- suppressWarnings(tseries::adf.test(series))
+  kpss <- suppressWarnings(tseries::kpss.test(series))
+  
+  stationary_flag <- (adf$p.value < 0.05) & (kpss$p.value > 0.05)
+  
+  tibble(
+    variable = var,
+    adf_statistic  = as.numeric(adf$statistic),
+    adf_p_value    = adf$p.value,
+    kpss_statistic = as.numeric(kpss$statistic),
+    kpss_p_value   = kpss$p.value,
+    stationary     = stationary_flag,
+    note = ifelse(stationary_flag,
+                  "Stationary (ADF reject, KPSS not reject)",
+                  "Non-stationary or inconclusive")
+  )
+})
+
+stationarity_results
+```
 
 
 ### Conclusion
